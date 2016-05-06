@@ -1,25 +1,25 @@
 var engine;
 
+function boardColors() {
+    $("#grid").attr("fill", $("#cp1").val());
+    $("#ellipsoid").attr("fill", $("#cp2").val());
+}
+
+
 // document onload
 $(function() {
-    engine = new Engine("#scene", "board.svg");
+    engine = new Engine("#scene");
     
-    // render once image is loaded
-    temp = setInterval(function() {
-            if(engine.bgImage.ready) {
-                engine.calibrate();
-                engine.render();
-                clearInterval(temp);
-            }
-        },
-        50
-    );
-
+    $("#cp1, #cp2").change(boardColors);
 
     $(window).resize(function() {
         engine.calibrate();
         engine.render();
     });
+
+    boardColors();
+    engine.calibrate();
+    engine.render();
 });
 
 
