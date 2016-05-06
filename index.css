@@ -48,6 +48,11 @@ main {
     background-color: #777;
 }
 
+@media (max-aspect-ratio: 1/1) {
+    #utility {
+        display: none;
+    }
+}
 #utility input {
     display: block;
     width: 4em;
