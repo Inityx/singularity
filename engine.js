@@ -34,22 +34,28 @@ var Square = function() {
     }
 }
 
-function dist(x1, y1, x2, y2) {
-    return Math.sqrt((x1-x2)*(x1-x2) + (y1-y2)*(y1-y2));
+function dist(n, m) {
+    return Math.sqrt((n.x-m.x)*(n.x-m.x) + (n.y-m.y)*(n.y-m.y));
 }
 
 var Board = function() {
     this.size = 64;
     this.square = new Array(this.size);
     
-    this.nodeNearest = function(x, y) {
+    // return reference to node closest to x,y
+    this.nodeNearest = function(ix, iy) {
         var min = this.square[0];
         var curr;
         for (var i=1; i<this.size; i++) {
             curr = this.square[i];
-            if(dist(x, y, curr.coord.x, curr.coord.y) < dist(x, y, min.coord.x, min.coord.y)) {
-                min = curr;
-            }
+            if(dist(
+                    { x: ix, y: iy},
+                    { x: curr.coord.x, y: curr.coord.y }
+                ) < dist(
+                    { x: ix, y: iy},
+                    { x: min.coord.x, y: min.coord.y}
+                )
+            ) { min = curr; }
         }
         
         return min;
@@ -120,7 +126,10 @@ var Engine = function(canvas, board_url) {
         this.pctx.canvas.height = h;
     };
     
-    this.getScale = function() { return this.canvas.width()/8; };
+    this.getScale = function() {
+        // column width in pixels
+        return this.canvas.width()/8;
+    };
 
     this.getMouse = function(event) { // mouse coordinates in terms of square widths
         if(event == null) { return { x: -1, y: -1 }; }
@@ -136,28 +145,27 @@ var Engine = function(canvas, board_url) {
         // clear private canvas
         this.pctx.clearRect(0,0,this.canvas.width(),this.canvas.height());
 
-        // get data
+        // set data
         var mouse = this.getMouse(event);
         var scale = this.getScale();
         var m = this.board.nodeNearest(mouse.x, mouse.y);
-
+        this.pctx.font = scale/5 + "px Helvetica";
+        this.pctx.textAlign = "center";
+        
         // draw nodes
         var s;
         for(var i=0;i<this.board.size;i++) {    
             s = this.board.square[i];
             
-            this.pctx.fillStyle = "red";
+            if( m == s) { this.pctx.fillStyle = "green"; }
+            else { this.pctx.fillStyle = "red"; }
             this.pctx.beginPath();
-            if( m == s) {
-                this.pctx.rect(s.coord.x*scale-15, s.coord.y*scale-15, 30, 30);
-            }
-            else {
-                this.pctx.rect(s.coord.x*scale-10, s.coord.y*scale-10, 20, 20);
-            }
+            this.pctx.rect(s.coord.x*scale-(scale/6), s.coord.y*scale-(scale/6), scale/3, scale/3);
             this.pctx.fill(); 
             this.pctx.closePath();
+            
             this.pctx.fillStyle = "black";
-            this.pctx.fillText(i, s.coord.x*scale-10, s.coord.y*scale);
+            this.pctx.fillText(i, s.coord.x*scale, s.coord.y*scale + (scale/12));
         }
         
         // copy render to real canvas
