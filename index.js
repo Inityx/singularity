@@ -16,10 +16,12 @@ $(function() {
         engine.calibrate();
         engine.render();
     });
+    
+    $("#scene").mousemove(function(event) { engine.render(event); });
 
     boardColors();
     engine.calibrate();
-    engine.render();
+    engine.render(null);
 });
 
 
