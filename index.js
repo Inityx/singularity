@@ -1,8 +1,10 @@
 var engine;
 
-function boardColors() {
+function boardColors(engine) {
     $("#grid").attr("fill", $("#cp1").val());
     $("#ellipsoid").attr("fill", $("#cp2").val());
+    engine.color.l = $("#cp1").val();
+    engine.color.d = $("#cp2").val();
 }
 
 
@@ -18,7 +20,7 @@ $(function() {
         engine.render();
     });
 
-    boardColors();
+    boardColors(engine);
     engine.calibrate();
     engine.render(null);
 });

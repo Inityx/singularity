@@ -2,7 +2,8 @@ var SquareType = {
     BOT: 0,
     MID: 1,
     TOP: 2
-}
+};
+Object.freeze(SquareType);
 
 var Square = function() {
     this.type = -1;
@@ -31,16 +32,62 @@ var Square = function() {
 
             this.coord.y = ((this.type == SquareType.BOT)?y:-y)+6;
         }
-    }
-}
+    };
+};
 
+var PieceColor = {
+    LIGHT: 0,
+    DARK: 1
+};
+Object.freeze(PieceColor);
+
+var PieceType = {
+    PAWN: 0,
+    ROOK: 1,
+    KNIGHT: 2,
+    BISHOP: 3,
+    KING: 4,
+    QUEEN: 5
+};
+Object.freeze(PieceType);
+
+var PieceMoves = {
+    PAWN: { dir: "f", lim: 2 },
+    ROOK: { dir: "o", lim: 0 },
+    KNIGHT: { dir: "k", lim: 1 },
+    BISHOP: { dir: "d", lim: 0 },
+    KING: { dir: "a", lim: 1 },
+    QUEEN: { dir: "a", lim: 0 }
+};
+Object.freeze(PieceMoves);
+
+var PieceChar = {
+    PAWN: "♟",
+    ROOK: "♜",
+    KNIGHT: "♞",
+    BISHOP: "♝",
+    KING: "♚",
+    QUEEN: "♛"
+};
+Object.freeze(PieceChar);
+
+var Piece = function() {
+    this.color = -1;
+    this.type = -1;
+    this.char = "X";
+    this.location = null;
+    this.moves = null;
+};
+    
 function dist(n, m) {
     return Math.sqrt((n.x-m.x)*(n.x-m.x) + (n.y-m.y)*(n.y-m.y));
 }
 
 var Board = function() {
     this.size = 64;
+    this.pieceCount = 32;
     this.square = new Array(this.size);
+    this.piece = new Array(this.pieces);
     
     // return reference to node closest to x,y
     this.nodeNearest = function(srcCoord) {
@@ -98,9 +145,43 @@ var Board = function() {
         // generate screenspace coords for nodes
         this.square[i].genCoords();
     }
-}
+    
+    // define initial pieces
+    for (var i=0; i<this.pieceCount/2; i++) {
+        this.piece[i] = new Piece();
+        this.piece[i].color = PieceColor.LIGHT;
+        this.piece[i].location = this.square[i];
+    }
+    for (var i=this.pieceCount/2; i<this.pieceCount; i++) {
+        this.piece[i] = new Piece();
+        this.piece[i].color = PieceColor.DARK;
+        this.piece[i].location = this.square[i+32];
+    }
+    for (var i=0; i<this.pieceCount; i++) {
+        var p = this.piece[i];
+        if(i>7 && i<24) {                                       // pawn
+            p.type = PieceType.PAWN;
+            p.char = PieceChar.PAWN;
+        } else if (i == 0 || i == 7 || i == 24 || i == 31) {    // rook
+            p.type = PieceType.ROOK;
+            p.char = PieceChar.ROOK;
+        } else if (i == 1 || i == 6 || i == 25 || i == 30) {    // knight
+            p.type = PieceType.KNIGHT;
+            p.char = PieceChar.KNIGHT;
+        } else if (i == 2 || i == 5 || i == 26 || i == 29) {    // bishop
+            p.type = PieceType.BISHOP;
+            p.char = PieceChar.BISHOP;
+        } else if (i == 3 || i == 27) {                         // queen
+            p.type = PieceType.QUEEN;
+            p.char = PieceChar.QUEEN;
+        } else if (i == 4 || i == 28) {                         // king
+            p.type = PieceType.KING;
+            p.char = PieceChar.KING;
+        }
+    }
+};
 
-var Engine = function(canvas, board_url) {
+var Engine = function(canvas, color_l, color_d) {
     // master canvas
     this.canvas = $(canvas);
     this.ctx = this.canvas[0].getContext("2d");
@@ -108,7 +189,9 @@ var Engine = function(canvas, board_url) {
     // hidden drawbuffer to increase performance
     this.pcanvas = document.createElement("canvas");
     this.pctx = this.pcanvas.getContext("2d");
-
+    
+    this.color = { l: "white", d: "black" };
+    
     this.board = new Board();
 
     this.calibrate = function() {
@@ -134,7 +217,7 @@ var Engine = function(canvas, board_url) {
             x: (event.clientX-this.canvas[0].getBoundingClientRect().left)/scale,
             y: (event.clientY-this.canvas[0].getBoundingClientRect().top)/scale
         };
-    }
+    };
 
     this.render = function(event) {
         // clear private canvas
@@ -143,33 +226,31 @@ var Engine = function(canvas, board_url) {
         // set data
         var mouse = this.getMouse(event);
         var scale = this.getScale();
-        var m = this.board.nodeNearest(mouse);
-        this.pctx.font = scale/5 + "px Helvetica";
+        
         this.pctx.textAlign = "center";
         this.pctx.strokeStyle = "orange";
         this.pctx.lineWidth = scale/16;
         
-        // draw nodes
-        var s;
-        for(var i=0;i<this.board.size;i++) {    
-            s = this.board.square[i];
-            
-            if( m == s) {
-                this.pctx.beginPath();
-                //this.pctx.rect(s.coord.x*scale-(scale/6), s.coord.y*scale-(scale/6), scale/3, scale/3);
-                this.pctx.arc(s.coord.x*scale, s.coord.y*scale, scale/3, 0, Math.PI*2, false);
-                this.pctx.stroke();
-                this.pctx.closePath();
-            }    
-            this.pctx.fillStyle = "grey";
-            this.pctx.fillText(i+1, s.coord.x*scale, s.coord.y*scale + (scale/12));
-            
+        var m = this.board.nodeNearest(mouse);
+        this.pctx.beginPath();
+        this.pctx.arc(m.coord.x*scale, m.coord.y*scale, 2*scale/5, 0, Math.PI*2, false);
+        this.pctx.stroke();
+        this.pctx.closePath();
+        
+        // draw pieces
+        this.pctx.font = 3*scale/5 + "px Helvetica";
+        this.pctx.lineWidth = scale/16;
+        
+        for(var i=0; i<this.board.pieceCount; i++) {
+            var p = this.board.piece[i];
+            this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?this.color.d:this.color.l;
+            this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?this.color.l:this.color.d;
+            this.pctx.strokeText(p.char, p.location.coord.x*scale, p.location.coord.y*scale + (scale/5));
+            this.pctx.fillText  (p.char, p.location.coord.x*scale, p.location.coord.y*scale + (scale/5));
         }
         
         // copy render to real canvas
         this.ctx.clearRect(0,0,this.canvas.width(),this.canvas.height());
         this.ctx.drawImage(this.pcanvas,0,0);
-    }
-    
-    
+    };
 };
