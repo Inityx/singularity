@@ -43,19 +43,14 @@ var Board = function() {
     this.square = new Array(this.size);
     
     // return reference to node closest to x,y
-    this.nodeNearest = function(ix, iy) {
+    this.nodeNearest = function(srcCoord) {
         var min = this.square[0];
         var curr;
         for (var i=1; i<this.size; i++) {
             curr = this.square[i];
-            if(dist(
-                    { x: ix, y: iy},
-                    { x: curr.coord.x, y: curr.coord.y }
-                ) < dist(
-                    { x: ix, y: iy},
-                    { x: min.coord.x, y: min.coord.y}
-                )
-            ) { min = curr; }
+            if(dist(srcCoord, curr.coord) < dist(srcCoord, min.coord)) {
+                min = curr;
+            }
         }
         
         return min;
@@ -148,24 +143,27 @@ var Engine = function(canvas, board_url) {
         // set data
         var mouse = this.getMouse(event);
         var scale = this.getScale();
-        var m = this.board.nodeNearest(mouse.x, mouse.y);
+        var m = this.board.nodeNearest(mouse);
         this.pctx.font = scale/5 + "px Helvetica";
         this.pctx.textAlign = "center";
+        this.pctx.strokeStyle = "orange";
+        this.pctx.lineWidth = scale/16;
         
         // draw nodes
         var s;
         for(var i=0;i<this.board.size;i++) {    
             s = this.board.square[i];
             
-            if( m == s) { this.pctx.fillStyle = "green"; }
-            else { this.pctx.fillStyle = "red"; }
-            this.pctx.beginPath();
-            this.pctx.rect(s.coord.x*scale-(scale/6), s.coord.y*scale-(scale/6), scale/3, scale/3);
-            this.pctx.fill(); 
-            this.pctx.closePath();
+            if( m == s) {
+                this.pctx.beginPath();
+                //this.pctx.rect(s.coord.x*scale-(scale/6), s.coord.y*scale-(scale/6), scale/3, scale/3);
+                this.pctx.arc(s.coord.x*scale, s.coord.y*scale, scale/3, 0, Math.PI*2, false);
+                this.pctx.stroke();
+                this.pctx.closePath();
+            }    
+            this.pctx.fillStyle = "grey";
+            this.pctx.fillText(i+1, s.coord.x*scale, s.coord.y*scale + (scale/12));
             
-            this.pctx.fillStyle = "black";
-            this.pctx.fillText(i, s.coord.x*scale, s.coord.y*scale + (scale/12));
         }
         
         // copy render to real canvas

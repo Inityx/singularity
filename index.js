@@ -12,12 +12,11 @@ $(function() {
     
     $("#cp1, #cp2").change(boardColors);
 
+    $("#scene").mousemove(function(event) { engine.render(event); });
     $(window).resize(function() {
         engine.calibrate();
         engine.render();
     });
-    
-    $("#scene").mousemove(function(event) { engine.render(event); });
 
     boardColors();
     engine.calibrate();
