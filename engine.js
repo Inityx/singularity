@@ -81,16 +81,16 @@ var Board = function() {
         } else {
             s.type = SquareType.TOP;
             if (i>this.size-17) {         // top two rows
-                s.column = (this.size-i-1)%8;
+                s.column = 7-((this.size-i-1)%8);
                 s.depth = 6-Math.floor((this.size-i-1)/8);
             } else if (i>this.size-23) {  // third from top
-                s.column = (this.size-i-16)%8;
+                s.column = 7-((this.size-i-16)%8);
                 s.depth = 4;
             } else if (i>this.size-27) {  // second from center
-                s.column = (this.size-i-13)%8;
+                s.column = 7-((this.size-i-13)%8);
                 s.depth = 3;
             } else if (i>this.size-29) {  // center adjacent
-                s.column = (this.size-i-8)%8;
+                s.column = 7-((this.size-i-8)%8);
                 s.depth = 2; 
             }
         }
