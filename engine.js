@@ -190,8 +190,6 @@ var Engine = function(canvas, color_l, color_d) {
     this.pcanvas = document.createElement("canvas");
     this.pctx = this.pcanvas.getContext("2d");
     
-    this.color = { l: "white", d: "black" };
-    
     this.board = new Board();
 
     this.calibrate = function() {
@@ -243,8 +241,8 @@ var Engine = function(canvas, color_l, color_d) {
         
         for(var i=0; i<this.board.pieceCount; i++) {
             var p = this.board.piece[i];
-            this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?this.color.d:this.color.l;
-            this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?this.color.l:this.color.d;
+            this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?"#222":"#DDD";
+            this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?"#DDD":"#222";
             this.pctx.strokeText(p.char, p.location.coord.x*scale, p.location.coord.y*scale + (scale/5));
             this.pctx.fillText  (p.char, p.location.coord.x*scale, p.location.coord.y*scale + (scale/5));
         }

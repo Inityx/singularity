@@ -1,10 +1,8 @@
 var engine;
 
-function boardColors(engine) {
+function boardColors(eng) {
     $("#grid").attr("fill", $("#cp1").val());
     $("#ellipsoid").attr("fill", $("#cp2").val());
-    engine.color.l = $("#cp1").val();
-    engine.color.d = $("#cp2").val();
 }
 
 
