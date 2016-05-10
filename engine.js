@@ -226,6 +226,9 @@ var Engine = function(canvas, color_l, color_d) {
         var scale = this.getScale();
         
         this.pctx.textAlign = "center";
+        this.pctx.lineJoin = "round";
+        
+        // selection circle
         this.pctx.strokeStyle = "orange";
         this.pctx.lineWidth = scale/16;
         
@@ -236,7 +239,7 @@ var Engine = function(canvas, color_l, color_d) {
         this.pctx.closePath();
         
         // draw pieces
-        this.pctx.font = 3*scale/5 + "px Helvetica";
+        this.pctx.font = Math.floor(3*scale/5) + "px Times New Roman";
         this.pctx.lineWidth = scale/16;
         
         for(var i=0; i<this.board.pieceCount; i++) {
