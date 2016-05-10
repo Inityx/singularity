@@ -102,6 +102,23 @@ var Board = function() {
         
         return min;
     }
+
+    this.pieceOn = function(square) {
+        for (var i=0; i<this.pieceCount; i++) {
+            if(this.piece[i].location == square) {
+                return this.piece[i];
+            }
+        }
+        return null;
+    };
+
+    this.canMove = function(piece, location) {
+        return !(this.pieceOn(location));
+    }
+
+    this.move = function(piece, location) {
+        piece.location = location;
+    }
     
     // define logical coords for nodes
     for (var i=0; i<this.size; i++) {
@@ -182,15 +199,17 @@ var Board = function() {
 };
 
 var Engine = function(canvas, color_l, color_d) {
-    // master canvas
+    // display canvas
     this.canvas = $(canvas);
     this.ctx = this.canvas[0].getContext("2d");
     
-    // hidden drawbuffer to increase performance
+    // hidden canvas as drawbuffer to decrease latency
     this.pcanvas = document.createElement("canvas");
     this.pctx = this.pcanvas.getContext("2d");
     
     this.board = new Board();
+    this.mousePos = { x:-1, y: -1 };
+    this.held = null;
 
     this.calibrate = function() {
         var w = this.canvas.width();
@@ -206,51 +225,86 @@ var Engine = function(canvas, color_l, color_d) {
         // column width in pixels
         return this.canvas.width()/8;
     };
-
-    this.getMouse = function(event) { // mouse coordinates in terms of square widths
-        if(event == null) { return { x: -1, y: -1 }; }
+    
+    this.setMouse = function(event) { // mouse coordinates in terms of square widths
+        if(event == null || typeof(event) == "undefined") {
+            this.mousePos = { x: -1, y: -1 };
+        }
 
         var scale = this.getScale();
-        return {
+        this.mousePos = {
             x: (event.clientX-this.canvas[0].getBoundingClientRect().left)/scale,
             y: (event.clientY-this.canvas[0].getBoundingClientRect().top)/scale
         };
     };
 
-    this.render = function(event) {
-        // clear private canvas
+    this.pick = function() {
+        var nn = this.board.nodeNearest(this.mousePos);
+        var piece = this.board.pieceOn(nn);
+        if(piece != null) {
+            this.held = piece;
+            this.canvas[0].style.cursor = "none";
+        }
+    };
+
+    this.drop = function() {
+        if(this.held != null) {
+            var nn = this.board.nodeNearest(this.mousePos);
+            if(this.board.canMove(this.held, nn)) {
+                this.board.move(this.held, nn);
+            }
+            this.held = null;
+        }
+        this.canvas[0].style.cursor = "pointer";
+    };
+
+
+    this.render = function() {
+        // clear drawbuffer canvas
         this.pctx.clearRect(0,0,this.canvas.width(),this.canvas.height());
 
         // set data
-        var mouse = this.getMouse(event);
         var scale = this.getScale();
         
         this.pctx.textAlign = "center";
         this.pctx.lineJoin = "round";
         
-        // selection circle
-        this.pctx.strokeStyle = "orange";
-        this.pctx.lineWidth = scale/16;
-        
-        var m = this.board.nodeNearest(mouse);
-        this.pctx.beginPath();
-        this.pctx.arc(m.coord.x*scale, m.coord.y*scale, 2*scale/5, 0, Math.PI*2, false);
-        this.pctx.stroke();
-        this.pctx.closePath();
-        
+        // selection circle under everything
+        if(this.held != null) {
+            this.pctx.strokeStyle = "orange";
+            this.pctx.lineWidth = scale/16;
+            
+            var m = this.board.nodeNearest(this.mousePos);
+            this.pctx.beginPath();
+            this.pctx.arc(m.coord.x*scale, m.coord.y*scale, 2*scale/5, 0, Math.PI*2, false);
+            this.pctx.stroke();
+            this.pctx.closePath();
+        }
+
         // draw pieces
         this.pctx.font = Math.floor(3*scale/5) + "px Times New Roman";
         this.pctx.lineWidth = scale/16;
         
+        var p, xrend, yrend;
         for(var i=0; i<this.board.pieceCount; i++) {
-            var p = this.board.piece[i];
+            p = this.board.piece[i];
+            
             this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?"#222":"#DDD";
             this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?"#DDD":"#222";
-            this.pctx.strokeText(p.char, p.location.coord.x*scale, p.location.coord.y*scale + (scale/5));
-            this.pctx.fillText  (p.char, p.location.coord.x*scale, p.location.coord.y*scale + (scale/5));
+            
+            if(this.held != p) { // non-held pieces
+                xrend = p.location.coord.x*scale;
+                yrend = p.location.coord.y*scale + (scale/5);
+            } else { // held piece
+                xrend = this.mousePos.x*scale;
+                yrend = this.mousePos.y*scale + (scale/5);
+            }
+            
+            this.pctx.strokeText(p.char, xrend, yrend);
+            this.pctx.fillText  (p.char, xrend, yrend);
         }
-        
-        // copy render to real canvas
+
+        // copy render to display canvas
         this.ctx.clearRect(0,0,this.canvas.width(),this.canvas.height());
         this.ctx.drawImage(this.pcanvas,0,0);
     };

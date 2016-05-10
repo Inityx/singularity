@@ -68,3 +68,7 @@ main {
 #utility a {
     color: #B8B8B8;
 }
+
+#scene {
+    cursor: pointer;
+}

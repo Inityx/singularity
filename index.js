@@ -1,26 +1,37 @@
-var engine;
-
 function boardColors(eng) {
     $("#grid").attr("fill", $("#cp1").val());
     $("#ellipsoid").attr("fill", $("#cp2").val());
 }
 
-
 // document onload
 $(function() {
-    engine = new Engine("#scene");
+    var canvas = "#scene";
+    var engine = new Engine(canvas);
     
     $("#cp1, #cp2").change(boardColors);
 
-    $("#scene").mousemove(function(event) { engine.render(event); });
     $(window).resize(function() {
         engine.calibrate();
         engine.render();
     });
 
+    // bind mouse interactions
+    $(canvas).mousemove(function(event) { 
+        engine.setMouse(event);
+        engine.render();
+    });
+    $(canvas).mousedown(function() {
+        engine.pick();
+        engine.render();
+    });
+    $(canvas).mouseup(function() {
+        engine.drop();
+        engine.render();
+    });
+    
     boardColors(engine);
     engine.calibrate();
-    engine.render(null);
+    engine.render();
 });
 
 
