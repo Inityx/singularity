@@ -19,10 +19,17 @@ body {
 main {
     display: block;
     position: relative;
+    margin: 0 auto;
     
     height: 100%;
     width: 66.666vh;
-    margin: 0 auto;
+}
+
+@media (max-aspect-ratio: 2/3) { /* Too narrow to display */
+    main {
+        width: 100%;
+        height: 150vw;
+    }
 }
 
 #board-image, #scene {
