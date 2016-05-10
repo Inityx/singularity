@@ -219,6 +219,8 @@ var Engine = function(canvas, color_l, color_d) {
         this.ctx.canvas.height = h;
         this.pctx.canvas.width = w;
         this.pctx.canvas.height = h;
+        this.setMouse();
+        this.render();
     };
     
     this.getScale = function() {
@@ -226,18 +228,29 @@ var Engine = function(canvas, color_l, color_d) {
         return this.canvas.width()/8;
     };
     
-    this.setMouse = function(event) { // mouse coordinates in terms of square widths
-        if(event == null || typeof(event) == "undefined") {
+    // cache mouse coordinates
+    this.setMouse = function(event, touch) { // mouse coordinates in terms of square widths
+        if(event) {
+            var scale = this.getScale();
+            var xoffset = this.canvas[0].getBoundingClientRect().left;
+            var yoffset = this.canvas[0].getBoundingClientRect().top;
+            if(touch) {
+                this.mousePos = {
+                    x: (event.originalEvent.touches[0].pageX-xoffset)/scale,
+                    y: (event.originalEvent.touches[0].pageY-yoffset)/scale
+                };
+            } else {
+                this.mousePos = {
+                    x: (event.clientX-xoffset)/scale,
+                    y: (event.clientY-yoffset)/scale
+                };
+            }
+        } else {
             this.mousePos = { x: -1, y: -1 };
         }
-
-        var scale = this.getScale();
-        this.mousePos = {
-            x: (event.clientX-this.canvas[0].getBoundingClientRect().left)/scale,
-            y: (event.clientY-this.canvas[0].getBoundingClientRect().top)/scale
-        };
     };
-
+    
+    // pick up piece under mouse
     this.pick = function() {
         var nn = this.board.nodeNearest(this.mousePos);
         var piece = this.board.pieceOn(nn);
@@ -247,6 +260,7 @@ var Engine = function(canvas, color_l, color_d) {
         }
     };
 
+    // drop piece
     this.drop = function() {
         if(this.held != null) {
             var nn = this.board.nodeNearest(this.mousePos);
@@ -289,6 +303,7 @@ var Engine = function(canvas, color_l, color_d) {
         for(var i=0; i<this.board.pieceCount; i++) {
             p = this.board.piece[i];
             
+            // set colors
             this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?"#222":"#DDD";
             this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?"#DDD":"#222";
             
