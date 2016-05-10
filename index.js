@@ -1,3 +1,5 @@
+var engine;
+
 function boardColors() {
     $("#grid").attr("fill", $("#cp1").val());
     $("#ellipsoid").attr("fill", $("#cp2").val());
@@ -6,7 +8,7 @@ function boardColors() {
 // document onload
 $(function() {
     var canvas = "#scene";
-    var engine = new Engine(canvas);
+    engine = new Engine(canvas, $(window).attr('devicePixelRatio'));
     
     // event listeners
     $("#cp1, #cp2").change(boardColors);
