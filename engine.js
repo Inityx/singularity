@@ -79,29 +79,43 @@ var Piece = function() {
     this.moves = null;
 };
     
-function dist(n, m) {
-    return Math.sqrt((n.x-m.x)*(n.x-m.x) + (n.y-m.y)*(n.y-m.y));
-}
-
 var Board = function() {
     this.size = 64;
     this.pieceCount = 32;
     this.square = new Array(this.size);
     this.piece = new Array(this.pieces);
     
-    // return reference to node closest to x,y
-    this.nodeNearest = function(srcCoord) {
-        var min = this.square[0];
+    this.dist = function(n, m) {
+        return Math.sqrt((n.x-m.x)*(n.x-m.x) + (n.y-m.y)*(n.y-m.y));
+    };
+
+    // return reference to node closest to x,y, indirect specifies property containing coordinates
+    this.nodeNearest = function(srcCoord, list, indirect) {
+        var min;
         var curr;
-        for (var i=1; i<this.size; i++) {
-            curr = this.square[i];
-            if(dist(srcCoord, curr.coord) < dist(srcCoord, min.coord)) {
-                min = curr;
+
+        if(indirect) { // if search requires additional indirection
+            min = list[0][indirect];
+            for (var i=1; i<list.length; i++) {
+                curr = list[i][indirect];
+                if(this.dist(srcCoord, curr.coord) <
+                        this.dist(srcCoord, min.coord)) {
+                    min = curr;
+                }
+            }
+        } else { // if list is of squares
+            min = list[0];
+            for (var i=1; i<list.length; i++) {
+                curr = list[i];
+                if(this.dist(srcCoord, curr.coord) <
+                        this.dist(srcCoord, min.coord)) {
+                    min = curr;
+                }
             }
         }
         
         return min;
-    }
+    };
 
     this.pieceOn = function(square) {
         for (var i=0; i<this.pieceCount; i++) {
@@ -114,11 +128,11 @@ var Board = function() {
 
     this.canMove = function(piece, location) {
         return !(this.pieceOn(location));
-    }
+    };
 
     this.move = function(piece, location) {
         piece.location = location;
-    }
+    };
     
     // define logical coords for nodes
     for (var i=0; i<this.size; i++) {
@@ -252,7 +266,7 @@ var Engine = function(canvas, color_l, color_d) {
     
     // pick up piece under mouse
     this.pick = function() {
-        var nn = this.board.nodeNearest(this.mousePos);
+        var nn = this.board.nodeNearest(this.mousePos, this.board.piece, 'location');
         var piece = this.board.pieceOn(nn);
         if(piece != null) {
             this.held = piece;
@@ -263,7 +277,7 @@ var Engine = function(canvas, color_l, color_d) {
     // drop piece
     this.drop = function() {
         if(this.held != null) {
-            var nn = this.board.nodeNearest(this.mousePos);
+            var nn = this.board.nodeNearest(this.mousePos, this.board.square);
             if(this.board.canMove(this.held, nn)) {
                 this.board.move(this.held, nn);
             }
@@ -283,12 +297,12 @@ var Engine = function(canvas, color_l, color_d) {
         this.pctx.textAlign = "center";
         this.pctx.lineJoin = "round";
         
-        // selection circle under everything
+        // selection circle on the bottom
         if(this.held != null) {
             this.pctx.strokeStyle = "orange";
             this.pctx.lineWidth = scale/16;
             
-            var m = this.board.nodeNearest(this.mousePos);
+            var m = this.board.nodeNearest(this.mousePos, this.board.square);
             this.pctx.beginPath();
             this.pctx.arc(m.coord.x*scale, m.coord.y*scale, 2*scale/5, 0, Math.PI*2, false);
             this.pctx.stroke();
