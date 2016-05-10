@@ -292,16 +292,20 @@ var Engine = function(canvas, color_l, color_d) {
             this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?"#222":"#DDD";
             this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?"#DDD":"#222";
             
-            if(this.held != p) { // non-held pieces
+            if(p != this.held) { // non-held pieces
                 xrend = p.location.coord.x*scale;
                 yrend = p.location.coord.y*scale + (scale/5);
-            } else { // held piece
-                xrend = this.mousePos.x*scale;
-                yrend = this.mousePos.y*scale + (scale/5);
-            }
-            
-            this.pctx.strokeText(p.char, xrend, yrend);
-            this.pctx.fillText  (p.char, xrend, yrend);
+                this.pctx.strokeText(p.char, xrend, yrend);
+                this.pctx.fillText  (p.char, xrend, yrend);
+            } 
+        }
+        if(this.held != null) { // held piece
+            this.pctx.strokeStyle = (this.held.color == PieceColor.LIGHT)?"#222":"#DDD";
+            this.pctx.fillStyle   = (this.held.color == PieceColor.LIGHT)?"#DDD":"#222";
+            xrend = this.mousePos.x*scale;
+            yrend = this.mousePos.y*scale + (scale/5);
+            this.pctx.strokeText(this.held.char, xrend, yrend);
+            this.pctx.fillText  (this.held.char, xrend, yrend);
         }
 
         // copy render to display canvas
