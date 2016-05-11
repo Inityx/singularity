@@ -52,12 +52,14 @@ var PieceType = {
 Object.freeze(PieceType);
 
 var PieceMoves = {
+    // orthogonal, diagonal, forward, knight
+    // limit zero if no limit
     PAWN: { dir: "f", lim: 2 },
     ROOK: { dir: "o", lim: 0 },
     KNIGHT: { dir: "k", lim: 1 },
     BISHOP: { dir: "d", lim: 0 },
-    KING: { dir: "a", lim: 1 },
-    QUEEN: { dir: "a", lim: 0 }
+    KING: { dir: "od", lim: 1 },
+    QUEEN: { dir: "od", lim: 0 }
 };
 Object.freeze(PieceMoves);
 
@@ -77,6 +79,28 @@ var Piece = function() {
     this.char = "X";
     this.location = null;
     this.moves = null;
+    this.forward = null; // directionality for pawn
+    
+    this.getTargets = function() {
+        // return array of possible destination squares
+        var ret = [];
+        var steps;
+        var curr;
+        if(this.moves.dir == "f" && this.moves.lim == 2) {
+            // pawn move
+        } else if (this.moves.dir == "k" && this.moves.lim == 1) {
+            // knight moves
+        } else {
+            if(this.moves.dir.match(/o/)) {
+                // orthogonal moves
+            }
+            if(this.moves.dir.matches(/d/)) {
+                // diagonal moves
+            }
+        }
+        
+        return ret;
+    };
 };
     
 var Board = function() {
@@ -188,26 +212,30 @@ var Board = function() {
         this.piece[i].color = PieceColor.DARK;
         this.piece[i].location = this.square[i+32];
     }
+    
     for (var i=0; i<this.pieceCount; i++) {
-        var p = this.piece[i];
+        var type;
         if(i>7 && i<24) {                                       // pawn
-            p.type = PieceType.PAWN;
-            p.char = PieceChar.PAWN;
+            type = "PAWN";
         } else if (i == 0 || i == 7 || i == 24 || i == 31) {    // rook
-            p.type = PieceType.ROOK;
-            p.char = PieceChar.ROOK;
+            type = "ROOK";
         } else if (i == 1 || i == 6 || i == 25 || i == 30) {    // knight
-            p.type = PieceType.KNIGHT;
-            p.char = PieceChar.KNIGHT;
+            type = "KNIGHT";
         } else if (i == 2 || i == 5 || i == 26 || i == 29) {    // bishop
-            p.type = PieceType.BISHOP;
-            p.char = PieceChar.BISHOP;
+            type = "BISHOP";
         } else if (i == 3 || i == 27) {                         // queen
-            p.type = PieceType.QUEEN;
-            p.char = PieceChar.QUEEN;
+            type = "QUEEN";
         } else if (i == 4 || i == 28) {                         // king
-            p.type = PieceType.KING;
-            p.char = PieceChar.KING;
+            type = "KING";
+        }
+        
+        var p = this.piece[i];
+        p.type = PieceType[type];
+        p.char = PieceChar[type];
+        p.moves = PieceMoves[type];
+        
+        if(p.type == PieceType.PAWN) {
+            p.forward = p.location.rel.up;
         }
     }
 };
