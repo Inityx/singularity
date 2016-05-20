@@ -205,11 +205,13 @@ var Board = function() {
         // connect (top|bot)
         switch(this.square[i].type) {
             case SquareType.TOP:
+                offset = (i<56) + (i<48)*2 + (i<42)*2;
+                this.square[i].rel.up = this.square[i-8+offset];
         
                 break;
             case SquareType.BOT:
-                offset = 6-this.square[i].depth;
-                this.square[i].rel.up = this.square[i+8];
+                offset = (i>8) + (i>16)*2 + (i>22)*2;
+                this.square[i].rel.up = this.square[i+8-offset];
         }
         // fix (top|bot) => mid connections
         // connect mid
@@ -388,11 +390,11 @@ var Engine = function(canvas, pixelRatio) {
         this.pctx.fillStyle = "#FF0";
         var currSquare = nearest;
         var label;
-        for(var relation in currSquare.rel) { // foreach up down left right
-            if (currSquare.rel[relation]) { // if not null
-                xrend = currSquare.rel[relation].coord.x*scale;
-                yrend = currSquare.rel[relation].coord.y*scale + 7;
-                switch(relation) {
+        for(var direction in currSquare.rel) { // foreach up down left right
+            if (currSquare.rel[direction]) { // if not null
+                xrend = currSquare.rel[direction].coord.x*scale;
+                yrend = currSquare.rel[direction].coord.y*scale + 7;
+                switch(direction) {
                     case 'up':
                         label = 'Up';
                         break;
