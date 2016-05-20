@@ -9,15 +9,13 @@ var Square = function() {
     this.type = -1;
     this.column = -1;
     this.depth = -1;
-    this.rel = {};
-    this.coord = {};
-
-    this.connect = function(up, down, left, right) {
-        this.rel.up = up;
-        this.rel.down = down;
-        this.rel.left = left;
-        this.rel.right = right;
+    this.rel = {
+        up: null,
+        down: null,
+        left: null,
+        right: null
     };
+    this.coord = {};
 
     // calc and cache x/y in terms of square widths
     this.genCoords = function() {
@@ -201,6 +199,22 @@ var Board = function() {
         this.square[i].genCoords();
     }
     
+    // connect nodes
+    var offset;
+    for (var i=0; i<this.size; i++) {
+        // connect (top|bot)
+        switch(this.square[i].type) {
+            case SquareType.TOP:
+        
+                break;
+            case SquareType.BOT:
+                offset = 6-this.square[i].depth;
+                this.square[i].rel.up = this.square[i+8];
+        }
+        // fix (top|bot) => mid connections
+        // connect mid
+    }
+    
     // define initial pieces
     for (var i=0; i<this.pieceCount/2; i++) {
         this.piece[i] = new Piece();
@@ -212,7 +226,6 @@ var Board = function() {
         this.piece[i].color = PieceColor.DARK;
         this.piece[i].location = this.square[i+32];
     }
-    
     for (var i=0; i<this.pieceCount; i++) {
         var type;
         if(i>7 && i<24) {                                       // pawn
@@ -324,7 +337,7 @@ var Engine = function(canvas, pixelRatio) {
 
         // set data
         var scale = this.getScale();
-        
+        var nearest = this.board.nodeNearest(this.mousePos, this.board.square);
         this.pctx.textAlign = "center";
         this.pctx.lineJoin = "round";
         
@@ -333,9 +346,9 @@ var Engine = function(canvas, pixelRatio) {
             this.pctx.strokeStyle = "orange";
             this.pctx.lineWidth = scale/16;
             
-            var m = this.board.nodeNearest(this.mousePos, this.board.square);
+            //var nearest = this.board.nodeNearest(this.mousePos, this.board.square);
             this.pctx.beginPath();
-            this.pctx.arc(m.coord.x*scale, m.coord.y*scale, 2*scale/5, 0, Math.PI*2, false);
+            this.pctx.arc(nearest.coord.x*scale, nearest.coord.y*scale, 2*scale/5, 0, Math.PI*2, false);
             this.pctx.stroke();
             this.pctx.closePath();
         }
@@ -367,7 +380,35 @@ var Engine = function(canvas, pixelRatio) {
             this.pctx.strokeText(this.held.char, xrend, yrend);
             this.pctx.fillText  (this.held.char, xrend, yrend);
         }
-
+        
+        // connection info
+        this.pctx.font = " 14px Helvetica";
+        this.pctx.lineWidth = 4;
+        this.pctx.strokeStyle = "#000";
+        this.pctx.fillStyle = "#FF0";
+        var currSquare = nearest;
+        var label;
+        for(var relation in currSquare.rel) { // foreach up down left right
+            if (currSquare.rel[relation]) { // if not null
+                xrend = currSquare.rel[relation].coord.x*scale;
+                yrend = currSquare.rel[relation].coord.y*scale + 7;
+                switch(relation) {
+                    case 'up':
+                        label = 'Up';
+                        break;
+                    case 'down':
+                        label = 'Down';
+                        break;
+                    case 'left':
+                        label = 'Left';
+                        break;
+                    case 'right':
+                        label = 'Right';
+                }
+                this.pctx.strokeText(label, xrend, yrend);
+                this.pctx.fillText  (label, xrend, yrend);
+            }
+        }
         // copy render to display canvas
         this.ctx.clearRect(0,0,this.canvas[0].width,this.canvas[0].height);
         this.ctx.drawImage(this.pcanvas,0,0);
