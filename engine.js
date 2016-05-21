@@ -288,8 +288,8 @@ var Board = function() {
 
 var Engine = function(canvas, pixelRatio) {
     // display canvas
-    this.canvas = $(canvas);
-    this.ctx = this.canvas[0].getContext("2d");
+    this.canvas = canvas;
+    this.ctx = this.canvas.getContext("2d");
     this.pRatio = pixelRatio;
     
     // hidden canvas as drawbuffer to decrease latency
@@ -302,9 +302,11 @@ var Engine = function(canvas, pixelRatio) {
     this.held = null;
 
     this.calibrate = function() {
-        var w = this.canvas.width()*this.pRatio;
-        var h = this.canvas.height()*this.pRatio;
-
+        var w = parseFloat(window.getComputedStyle(this.canvas).width) *
+            this.pRatio;
+        var h = parseFloat(window.getComputedStyle(this.canvas).height) *
+            this.pRatio;
+        
         this.ctx.canvas.width = w;
         this.ctx.canvas.height = h;
         this.pctx.canvas.width = w;
@@ -314,20 +316,22 @@ var Engine = function(canvas, pixelRatio) {
     
     this.getScale = function() {
         // column width in pixels
-        return this.canvas.width()*this.pRatio/8;
+        return (parseFloat(window.getComputedStyle(this.canvas).width) *
+                this.pRatio
+            )/8;
     };
     
     // cache mouse coordinates as square widths
     this.setMouse = function(event, touch) {
         if(event) {
             var scale = this.getScale();
-            var xoffset = this.canvas[0].getBoundingClientRect().left;
-            var yoffset = this.canvas[0].getBoundingClientRect().top;
+            var xoffset = this.canvas.getBoundingClientRect().left;
+            var yoffset = this.canvas.getBoundingClientRect().top;
             if(touch) {
                 this.mousePos = {
-                    x: ((event.originalEvent.touches[0].pageX-xoffset)/
+                    x: ((event.touches[0].pageX-xoffset)/
                         scale)*this.pRatio,
-                    y: ((event.originalEvent.touches[0].pageY-yoffset)/
+                    y: ((event.touches[0].pageY-yoffset)/
                         scale)*this.pRatio
                 };
             } else {
@@ -343,7 +347,6 @@ var Engine = function(canvas, pixelRatio) {
     
     // pick up piece under mouse
     this.pick = function() {
-        console.log("Pick");
         var nn = this.board.nodeNearest(
                 this.mousePos,
                 this.board.piece,
@@ -352,13 +355,12 @@ var Engine = function(canvas, pixelRatio) {
         var piece = this.board.pieceOn(nn);
         if(piece != null) {
             this.held = piece;
-            this.canvas[0].style.cursor = "none";
+            this.canvas.style.cursor = "none";
         }
     };
 
     // drop piece
     this.drop = function() {
-        console.log("Drop");
         if(this.held != null) {
             var nn = this.board.nodeNearest(this.mousePos, this.board.square);
             if(this.board.canMove(this.held, nn)) {
@@ -366,7 +368,7 @@ var Engine = function(canvas, pixelRatio) {
             }
             this.held = null;
         }
-        this.canvas[0].style.cursor = "pointer";
+        this.canvas.style.cursor = "pointer";
     };
 
 
@@ -457,7 +459,7 @@ var Engine = function(canvas, pixelRatio) {
             }
         }
         // copy render to display canvas
-        this.ctx.clearRect(0,0,this.canvas[0].width,this.canvas[0].height);
+        this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
         this.ctx.drawImage(this.pcanvas,0,0);
     };
 };

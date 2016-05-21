@@ -1,2 +1,2 @@
 # singularity
-Singularity chess in HTML5 and JavaScript.
+Singularity Chess written in HTML5 Canvas and Vanilla JavaScript.

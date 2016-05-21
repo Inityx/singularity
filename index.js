@@ -1,52 +1,66 @@
 var engine;
+var bColors;
 
-function boardColors() {
-    $("#grid").attr("fill", $("#cp1").val());
-    $("#ellipsoid").attr("fill", $("#cp2").val());
-}
+/*global Engine*/
 
-// document onload
-$(function() {
-    var canvas = "#scene";
-    engine = new Engine(canvas, $(window).attr('devicePixelRatio'));
+window.onload = function() {
+    var canvas = document.getElementById("scene");
+    engine = new Engine(canvas, window.devicePixelRatio);
     
-    // event listeners
-    $("#cp1, #cp2").change(boardColors);
-    $(window).resize(function() { engine.calibrate(); });
+    bColors = {
+        input: [ document.getElementById("cp1"), document.getElementById("cp2") ],
+        grid: document.getElementById("grid"),
+        ellipsoid: document.getElementById("ellipsoid"),
+        refresh: function() {
+            this.grid.setAttribute("fill", this.input[0].value);
+            this.ellipsoid.setAttribute("fill", this.input[1].value);
+        }
+    };
+    
+    bColors.input[0].addEventListener("change", function() {
+        bColors.refresh();
+    });
+    bColors.input[1].addEventListener("change", function() {
+        bColors.refresh();
+    });
+    
+    window.addEventListener("resize", function() {
+        engine.calibrate();
+    });
 
     // bind mouse interactions
-    $(canvas).mousemove(function(event) { 
-        engine.setMouse(event, false);
+    canvas.addEventListener("mousemove", function(event) { 
+        engine.setMouse(event);
         engine.render();
     });
-    $(canvas).mousedown(function() {
+    canvas.addEventListener("mousedown", function() {
         engine.pick();
         engine.render();
     });
-    $(canvas).mouseup(function() {
+    canvas.addEventListener("mouseup", function() {
         engine.drop();
         engine.render();
     });
     
     // bind touch interactions
-    $(canvas).on("touchmove", function(event) {
+    canvas.addEventListener("touchmove", function(event) {
         event.preventDefault();
         engine.setMouse(event, true);
         engine.render();
     });
-    $(canvas).on("touchstart", function(event) {
+    canvas.addEventListener("touchstart", function(event) {
         engine.setMouse(event, true);
         engine.pick();
         engine.render();
     });
-    $(canvas).on("touchend", function() {
+    canvas.addEventListener("touchend", function() {
         engine.drop();
         engine.render();
     });
     
     // initialize
-    boardColors();
+    bColors.refresh();
     engine.calibrate();
-});
+};
 
 
