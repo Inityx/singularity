@@ -204,75 +204,46 @@ var Board = function() {
     var s = this.square;
     for (var i=0; i<this.size; i++) {
         // connect (top|bot)
-        switch(s[i].type) {
-            case SquareType.TOP:
-                offset = (s[i].depth<6)   +                 // up
-                         (s[i].depth<5)*2 +                 //
-                         (s[i].depth<4)*2;                  //
-                if(s[i-8+offset].depth == s[i].depth-1) {   //
-                    s[i].rel.up = s[i-8+offset];            //
-                } else {                                    //
-                    s[i].rel.up = s[28+s[i].column];        // mids
-                }                                           //
+        if(s[i].type != SquareType.MID) {
+            // up
+            offset = (s[i].depth<6)   +
+                     (s[i].depth<5)*2 +
+                     (s[i].depth<4)*2;
+            offset = (s[i].type == SquareType.TOP)?i-8+offset:i+8-offset;
+            if(s[offset].depth == s[i].depth-1) {
+                s[i].rel.up = s[offset];
+            } else {
+                s[i].rel.up = s[28+s[i].column];
+            }
 
-                if(s[i].depth < 6) {                        // down
-                    offset = (s[i].depth<5)   +             //
-                             (s[i].depth<4)*2 +             //
-                             (s[i].depth<3)*2;              //
-                    s[i].rel.down = s[i+8-offset];          //
-                }                                           //
+            // down
+            if(s[i].depth < 6) {
+                offset = (s[i].depth<5)   +
+                         (s[i].depth<4)*2 +
+                         (s[i].depth<3)*2;
+                offset = (s[i].type == SquareType.TOP)?i+8-offset:i-8+offset;
+                s[i].rel.down = s[offset];
+            }
 
-                if(i < 63 && s[i+1].depth == s[i].depth) {  // left
-                    s[i].rel.left = s[i+1];                 //
-                } else if(s[i].column < 7) {                //
-                    s[i].rel.left = s[28+s[i].column+1];    // mids
-                }                                           //
-
-                if(s[i-1].depth == s[i].depth) {            // right
-                    s[i].rel.right = s[i-1];                //
-                } else if(s[i].column > 0) {                //
-                    s[i].rel.right = s[28+s[i].column-1];   // mids
-                }                                           //
-                
-                if(s[i].rel.up === null) {
-                    s[i].rel.up = s[i];
+            // left
+            offset = (s[i].type == SquareType.TOP)?1:-1;
+            if(i>0 && i<63) {
+                if(s[i+offset].depth == s[i].depth) {
+                    s[i].rel.left = s[i+offset];
+                } else if((s[i].type == SquareType.TOP && s[i].column < 7) ||
+                          (s[i].type == SquareType.BOT && s[i].column > 0)) {
+                    s[i].rel.left = s[28+s[i].column+offset];
                 }
-                break;
+            }
 
-            case SquareType.BOT:
-                offset = (s[i].depth<6)   +                 // up
-                         (s[i].depth<5)*2 +                 //
-                         (s[i].depth<4)*2;                  //
-
-                if(s[i+8-offset].depth == s[i].depth-1) {   //
-                    s[i].rel.up = s[i+8-offset];            //
-                } else {                                    //
-                    s[i].rel.up = s[28+s[i].column];        // mids
-                }                                           //
-                
-                if(s[i].depth < 6) {                        // down
-                    offset = (s[i].depth<5)   +             //
-                             (s[i].depth<4)*2 +             //
-                             (s[i].depth<3)*2;              //
-                    s[i].rel.down = s[i-8+offset];          //
-                }
-                
-                if(i > 0 && s[i-1].depth == s[i].depth) {   // left
-                    s[i].rel.left = s[i-1];                 //
-                } else if(s[i].column > 0) {                //
-                    s[i].rel.left = s[28+s[i].column-1];    // mids
-                }                                           //
-
-                if(s[i+1].depth == s[i].depth) {            // right
-                    s[i].rel.right = s[i+1];                //
-                } else if(s[i].column < 7) {                //
-                    s[i].rel.right = s[28+s[i].column+1];   // mids
-                }                                           //
-
-                break;
-
-            case SquareType.MID:
-               
+            // right
+            offset = (s[i].type == SquareType.TOP)?-1:1;
+            if(s[i+offset].depth == s[i].depth) {
+                s[i].rel.right = s[i+offset];
+            } else if((s[i].type == SquareType.TOP && s[i].column > 0) ||
+                      (s[i].type == SquareType.BOT && s[i].column < 7)) {
+                s[i].rel.right = s[28+s[i].column+offset];
+            }
         }
     }
     
