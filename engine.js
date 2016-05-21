@@ -111,7 +111,8 @@ var Board = function() {
         return Math.sqrt((n.x-m.x)*(n.x-m.x) + (n.y-m.y)*(n.y-m.y));
     };
 
-    // return reference to node closest to x,y, indirect specifies property containing coordinates
+    // return reference to node closest to x,y
+    // indirect specifies property containing coordinates
     this.nodeNearest = function(srcCoord, list, indirect) {
         var min;
         var curr;
@@ -316,16 +317,18 @@ var Engine = function(canvas, pixelRatio) {
         return this.canvas.width()*this.pRatio/8;
     };
     
-    // cache mouse coordinates
-    this.setMouse = function(event, touch) { // mouse coordinates in terms of square widths
+    // cache mouse coordinates as square widths
+    this.setMouse = function(event, touch) {
         if(event) {
             var scale = this.getScale();
             var xoffset = this.canvas[0].getBoundingClientRect().left;
             var yoffset = this.canvas[0].getBoundingClientRect().top;
             if(touch) {
                 this.mousePos = {
-                    x: ((event.originalEvent.touches[0].pageX-xoffset)/scale)*this.pRatio,
-                    y: ((event.originalEvent.touches[0].pageY-yoffset)/scale)*this.pRatio
+                    x: ((event.originalEvent.touches[0].pageX-xoffset)/
+                        scale)*this.pRatio,
+                    y: ((event.originalEvent.touches[0].pageY-yoffset)/
+                        scale)*this.pRatio
                 };
             } else {
                 this.mousePos = {
@@ -341,7 +344,11 @@ var Engine = function(canvas, pixelRatio) {
     // pick up piece under mouse
     this.pick = function() {
         console.log("Pick");
-        var nn = this.board.nodeNearest(this.mousePos, this.board.piece, 'location');
+        var nn = this.board.nodeNearest(
+                this.mousePos,
+                this.board.piece,
+                'location'
+            );
         var piece = this.board.pieceOn(nn);
         if(piece != null) {
             this.held = piece;
@@ -378,9 +385,15 @@ var Engine = function(canvas, pixelRatio) {
             this.pctx.strokeStyle = "orange";
             this.pctx.lineWidth = scale/16;
             
-            //var nearest = this.board.nodeNearest(this.mousePos, this.board.square);
             this.pctx.beginPath();
-            this.pctx.arc(nearest.coord.x*scale, nearest.coord.y*scale, 2*scale/5, 0, Math.PI*2, false);
+            this.pctx.arc(
+                    nearest.coord.x*scale,
+                    nearest.coord.y*scale,
+                    2*scale/5,
+                    0,
+                    Math.PI*2,
+                    false
+                );
             this.pctx.stroke();
             this.pctx.closePath();
         }
@@ -405,8 +418,10 @@ var Engine = function(canvas, pixelRatio) {
             } 
         }
         if(this.held != null) { // held piece
-            this.pctx.strokeStyle = (this.held.color == PieceColor.LIGHT)?"#222":"#DDD";
-            this.pctx.fillStyle   = (this.held.color == PieceColor.LIGHT)?"#DDD":"#222";
+            this.pctx.strokeStyle = (this.held.color == PieceColor.LIGHT)?
+                "#222":"#DDD";
+            this.pctx.fillStyle   = (this.held.color == PieceColor.LIGHT)?
+                "#DDD":"#222";
             xrend = this.mousePos.x*scale;
             yrend = this.mousePos.y*scale + (scale/5);
             this.pctx.strokeText(this.held.char, xrend, yrend);
