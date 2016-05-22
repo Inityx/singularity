@@ -79,18 +79,25 @@ var Piece = function() {
     this.moves = null;
     this.forward = null; // directionality for pawn
     
-    this.getTargets = function() {
-        // return array of possible destination squares
+    // return 2D array of possible destination squares
+    this.getPaths = function(board) {
         let ret = [], steps, curr;
+        ret.push([this.location]); // no move
+        
         if(this.moves.dir == "f" && this.moves.lim == 2) {
             // pawn move
+            // forward
+            if(!board.pieceOn(this.forward)) {
+                ret.push([this.forward, this.forward.rel.up]);
+            }
+            // diag attack
         } else if (this.moves.dir == "k" && this.moves.lim == 1) {
             // knight moves
         } else {
             if(this.moves.dir.match(/o/)) {
                 // orthogonal moves
             }
-            if(this.moves.dir.matches(/d/)) {
+            if(this.moves.dir.match(/d/)) {
                 // diagonal moves
             }
         }
@@ -105,36 +112,28 @@ var Board = function() {
     this.square = new Array(this.size);
     this.piece = new Array(this.pieces);
     
-    this.dist = function(n, m) {
-        return Math.sqrt((n.x-m.x)*(n.x-m.x) + (n.y-m.y)*(n.y-m.y));
-    };
+    // return reference to node closest to x,y from n-dimensional array
+    this.nodeNearest = function(srcCoord, list) {
+        let dist = function(n, m) {
+            return Math.sqrt((n.x-m.x)*(n.x-m.x) + (n.y-m.y)*(n.y-m.y));
+        };
 
-    // return reference to node closest to x,y
-    // indirect specifies property containing coordinates
-    this.nodeNearest = function(srcCoord, list, indirect) {
-        let min, curr;
+        let initial = function(arr) {
+            return Array.isArray(arr[0])?initial(arr[0]):arr[0];
+        };
 
-        if(indirect) { // if search requires additional indirection
-            min = list[0][indirect];
-            for (let i=1; i<list.length; i++) {
-                curr = list[i][indirect];
-                if(this.dist(srcCoord, curr.coord) <
-                        this.dist(srcCoord, min.coord)) {
+        let min_in = function(from, arr, pmin) {
+            let min = (pmin)?pmin:initial(arr);
+            for(let item of arr) {
+                curr = Array.isArray(item)?min_in(from, item, pmin):item;
+                if(dist(from, curr.coord) < dist(from, min.coord)) {
                     min = curr;
                 }
             }
-        } else { // if list is of squares
-            min = list[0];
-            for (let i=1; i<list.length; i++) {
-                curr = list[i];
-                if(this.dist(srcCoord, curr.coord) <
-                        this.dist(srcCoord, min.coord)) {
-                    min = curr;
-                }
-            }
-        }
-        
-        return min;
+            return min;
+        };
+
+        return min_in(srcCoord, list);
     };
 
     this.pieceOn = function(square) {
@@ -329,6 +328,7 @@ var Engine = function(canvas, pixelRatio) {
     this.board = new Board();
     this.mousePos = { x:-1, y: -1 };
     this.held = null;
+    this.paths = null;
 
     this.calibrate = function() {
         let w = parseFloat(window.getComputedStyle(this.canvas).width) *
@@ -376,27 +376,34 @@ var Engine = function(canvas, pixelRatio) {
     
     // pick up piece under mouse
     this.pick = function() {
+        console.log("DEBUG Pick");
         let nn = this.board.nodeNearest(
                 this.mousePos,
-                this.board.piece,
-                'location'
+                this.board.square
             );
         let piece = this.board.pieceOn(nn);
         if(piece != null) {
             this.held = piece;
+            this.paths = piece.getPaths(this.board);
             this.canvas.style.cursor = "none";
         }
     };
 
     // drop piece
     this.drop = function() {
-        if(this.held != null) {
-            let nn = this.board.nodeNearest(this.mousePos, this.board.square);
-            if(this.board.canMove(this.held, nn)) {
+        console.log("DEBUG Drop");
+        if(this.held && this.paths && this.paths[0]) {
+            let nn = this.board.nodeNearest(
+                    this.mousePos,
+                    this.paths
+                );
+            if(nn != this.held.location && this.board.canMove(this.held, nn)) {
                 this.board.move(this.held, nn);
+                // change to other player's move
             }
-            this.held = null;
         }
+        this.held = null;
+        this.paths = null;
         this.canvas.style.cursor = "pointer";
     };
 
@@ -411,22 +418,41 @@ var Engine = function(canvas, pixelRatio) {
         this.pctx.textAlign = "center";
         this.pctx.lineJoin = "round";
         
-        // selection circle on the bottom
-        if(this.held != null) {
+        if(this.held) {
+            let nearTarget = this.board.nodeNearest(this.mousePos, this.paths);
+            // selection circle
             this.pctx.strokeStyle = "orange";
             this.pctx.lineWidth = scale/16;
             
             this.pctx.beginPath();
             this.pctx.arc(
-                    nearest.coord.x*scale,
-                    nearest.coord.y*scale,
+                    nearTarget.coord.x*scale,
+                    nearTarget.coord.y*scale,
                     2*scale/5,
                     0,
-                    Math.PI*2,
-                    false
+                    Math.PI*2
                 );
-            this.pctx.stroke();
             this.pctx.closePath();
+            this.pctx.stroke();
+
+            // targets and paths
+            this.pctx.fillStyle = "orange";
+            for(let path of this.paths) {
+                for(let i=0; i<path.length; i++) {
+                    if(path[i] != this.held.location) {
+                        this.pctx.beginPath();
+                        this.pctx.arc(
+                                path[i].coord.x*scale,
+                                path[i].coord.y*scale,
+                                scale/8,
+                                0,
+                                Math.PI*2
+                            );
+                        this.pctx.closePath();
+                        this.pctx.fill();
+                    }
+                }
+            }
         }
 
         // draw pieces
@@ -438,17 +464,27 @@ var Engine = function(canvas, pixelRatio) {
             p = this.board.piece[i];
             
             // set colors
-            this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?"#222":"#DDD";
-            this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?"#DDD":"#222";
-            
-            if(p != this.held) { // non-held pieces
-                xrend = p.location.coord.x*scale;
-                yrend = p.location.coord.y*scale + (scale/5);
-                this.pctx.strokeText(p.char, xrend, yrend);
-                this.pctx.fillText  (p.char, xrend, yrend);
-            } 
+            if(p != this.held) {    // non-held pieces
+                this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?
+                    "#222":"#DDD";
+                this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?
+                    "#DDD":"#222";
+            } else {                // held piece
+                this.pctx.strokeStyle = (p.color == PieceColor.LIGHT)?
+                    "rgba(34,34,34,0.3)":"rgba(221,221,221,0.3)";
+                this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?
+                    "rgba(221,221,221,0.3)":"rgba(34,34,34,0.3)";
+            }
+
+            xrend = p.location.coord.x*scale;
+            yrend = p.location.coord.y*scale + (scale/5);
+            this.pctx.strokeText(p.char, xrend, yrend);
+            this.pctx.fillText  (p.char, xrend, yrend);
+                
         }
-        if(this.held != null) { // held piece
+
+        if(this.held != null) { // if piece held
+            // held piece
             this.pctx.strokeStyle = (this.held.color == PieceColor.LIGHT)?
                 "#222":"#DDD";
             this.pctx.fillStyle   = (this.held.color == PieceColor.LIGHT)?
@@ -460,30 +496,17 @@ var Engine = function(canvas, pixelRatio) {
         }
         
         // connection info
-        this.pctx.font = " 14px Helvetica";
-        this.pctx.lineWidth = 4;
-        this.pctx.strokeStyle = "#000";
-        this.pctx.fillStyle = "#FF0";
+        this.pctx.font = scale/8 + "px Helvetica";
+        this.pctx.lineWidth = scale/16;
+        this.pctx.strokeStyle = "rgba(0,0,0,0.8)";
+        this.pctx.fillStyle = "rgba(0,200,100,0.8";
         let currSquare = nearest, label;
         for(let direction in currSquare.rel) { // foreach up down left right
             if (currSquare.rel[direction]) { // if not null
                 xrend = currSquare.rel[direction].coord.x*scale;
-                yrend = currSquare.rel[direction].coord.y*scale + 7;
-                switch(direction) {
-                    case 'up':
-                        label = 'Up';
-                        break;
-                    case 'down':
-                        label = 'Down';
-                        break;
-                    case 'left':
-                        label = 'Left';
-                        break;
-                    case 'right':
-                        label = 'Right';
-                }
-                this.pctx.strokeText(label, xrend, yrend);
-                this.pctx.fillText  (label, xrend, yrend);
+                yrend = currSquare.rel[direction].coord.y*scale + (2*scale/5);
+                this.pctx.strokeText(direction, xrend, yrend);
+                this.pctx.fillText  (direction, xrend, yrend);
             }
         }
         // copy render to display canvas
