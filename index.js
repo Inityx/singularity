@@ -4,7 +4,7 @@ var bColors;
 /*global Engine*/
 
 window.onload = function() {
-    var canvas = document.getElementById("scene");
+    let canvas = document.getElementById("scene");
     engine = new Engine(canvas, window.devicePixelRatio);
     
     bColors = {

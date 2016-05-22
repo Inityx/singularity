@@ -24,9 +24,9 @@ var Square = function() {
         if (this.type == SquareType.MID) {
             this.coord.y = 6;
         } else {
-            var x = this.column - 3.5;
-            var d = this.depth -.5;
-            var y = Math.sqrt((d*d) - (x*x));
+            let x = this.column - 3.5;
+            let d = this.depth -.5;
+            let y = Math.sqrt((d*d) - (x*x));
 
             this.coord.y = ((this.type == SquareType.BOT)?y:-y)+6;
         }
@@ -81,9 +81,7 @@ var Piece = function() {
     
     this.getTargets = function() {
         // return array of possible destination squares
-        var ret = [];
-        var steps;
-        var curr;
+        let ret = [], steps, curr;
         if(this.moves.dir == "f" && this.moves.lim == 2) {
             // pawn move
         } else if (this.moves.dir == "k" && this.moves.lim == 1) {
@@ -114,12 +112,11 @@ var Board = function() {
     // return reference to node closest to x,y
     // indirect specifies property containing coordinates
     this.nodeNearest = function(srcCoord, list, indirect) {
-        var min;
-        var curr;
+        let min, curr;
 
         if(indirect) { // if search requires additional indirection
             min = list[0][indirect];
-            for (var i=1; i<list.length; i++) {
+            for (let i=1; i<list.length; i++) {
                 curr = list[i][indirect];
                 if(this.dist(srcCoord, curr.coord) <
                         this.dist(srcCoord, min.coord)) {
@@ -128,7 +125,7 @@ var Board = function() {
             }
         } else { // if list is of squares
             min = list[0];
-            for (var i=1; i<list.length; i++) {
+            for (let i=1; i<list.length; i++) {
                 curr = list[i];
                 if(this.dist(srcCoord, curr.coord) <
                         this.dist(srcCoord, min.coord)) {
@@ -141,7 +138,7 @@ var Board = function() {
     };
 
     this.pieceOn = function(square) {
-        for (var i=0; i<this.pieceCount; i++) {
+        for (let i=0; i<this.pieceCount; i++) {
             if(this.piece[i].location == square) {
                 return this.piece[i];
             }
@@ -158,9 +155,9 @@ var Board = function() {
     };
     
     // define logical coords for nodes
-    for (var i=0; i<this.size; i++) {
+    for (let i=0; i<this.size; i++) {
         this.square[i] = new Square();
-        var s = this.square[i];
+        let s = this.square[i];
         if (i<28) {
             s.type = SquareType.BOT;
             if (i<16) {         // bottom two rows
@@ -201,87 +198,91 @@ var Board = function() {
     }
     
     // connect nodes
-    var offset;
-    var s = this.square;
-    for (var i=0; i<this.size; i++) {
-        // connect (top|bot)
-        if(s[i].type != SquareType.MID) {
-            // up
-            offset = (s[i].depth<6)   +
-                     (s[i].depth<5)*2 +
-                     (s[i].depth<4)*2;
-            offset = (s[i].type == SquareType.TOP)?i-8+offset:i+8-offset;
-            if(s[offset].depth == s[i].depth-1) {
-                s[i].rel.up = s[offset];
-            } else {
-                s[i].rel.up = s[28+s[i].column];
-            }
-
-            // down
-            if(s[i].depth < 6) {
-                offset = (s[i].depth<5)   +
-                         (s[i].depth<4)*2 +
-                         (s[i].depth<3)*2;
-                offset = (s[i].type == SquareType.TOP)?i+8-offset:i-8+offset;
-                s[i].rel.down = s[offset];
-            }
-
-            // left
-            offset = (s[i].type == SquareType.TOP)?1:-1;
-            if(i>0 && i<63) {
-                if(s[i+offset].depth == s[i].depth) {
-                    s[i].rel.left = s[i+offset];
-                } else if((s[i].type == SquareType.TOP && s[i].column < 7) ||
-                          (s[i].type == SquareType.BOT && s[i].column > 0)) {
-                    s[i].rel.left = s[28+s[i].column+offset];
+    {
+        let offset, s = this.square;
+        for (let i=0; i<this.size; i++) {
+            if(s[i].type != SquareType.MID) { // Top/bottom squares
+                // up
+                offset = (s[i].depth<6)   +
+                         (s[i].depth<5)*2 +
+                         (s[i].depth<4)*2;
+                offset = (s[i].type == SquareType.TOP)?i-8+offset:i+8-offset;
+                if(s[offset].depth == s[i].depth-1) {
+                    s[i].rel.up = s[offset];
+                } else {
+                    s[i].rel.up = s[28+s[i].column];
                 }
-            }
-
-            // right
-            offset = (s[i].type == SquareType.TOP)?-1:1;
-            if(s[i+offset].depth == s[i].depth) {
-                s[i].rel.right = s[i+offset];
-            } else if((s[i].type == SquareType.TOP && s[i].column > 0) ||
-                      (s[i].type == SquareType.BOT && s[i].column < 7)) {
-                s[i].rel.right = s[28+s[i].column+offset];
+    
+                // down
+                if(s[i].depth < 6) {
+                    offset = (s[i].depth<5)   +
+                             (s[i].depth<4)*2 +
+                             (s[i].depth<3)*2;
+                    offset = (s[i].type == SquareType.TOP)?i+8-offset:i-8+offset;
+                    s[i].rel.down = s[offset];
+                }
+    
+                // left
+                offset = (s[i].type == SquareType.TOP)?1:-1;
+                if(i>0 && i<63) {
+                    if(s[i+offset].depth == s[i].depth) {
+                        s[i].rel.left = s[i+offset];
+                    } else if((s[i].type == SquareType.TOP && s[i].column < 7) ||
+                              (s[i].type == SquareType.BOT && s[i].column > 0)) {
+                        s[i].rel.left = s[28+s[i].column+offset];
+                    }
+                }
+    
+                // right
+                offset = (s[i].type == SquareType.TOP)?-1:1;
+                if(s[i+offset].depth == s[i].depth) {
+                    s[i].rel.right = s[i+offset];
+                } else if((s[i].type == SquareType.TOP && s[i].column > 0) ||
+                          (s[i].type == SquareType.BOT && s[i].column < 7)) {
+                    s[i].rel.right = s[28+s[i].column+offset];
+                }
+            } else { // middle squares
+                
             }
         }
     }
     
     // define initial pieces
-    for (var i=0; i<this.pieceCount/2; i++) {
-        this.piece[i] = new Piece();
-        this.piece[i].color = PieceColor.LIGHT;
-        this.piece[i].location = this.square[i];
-    }
-    for (var i=this.pieceCount/2; i<this.pieceCount; i++) {
-        this.piece[i] = new Piece();
-        this.piece[i].color = PieceColor.DARK;
-        this.piece[i].location = this.square[i+32];
-    }
-    for (var i=0; i<this.pieceCount; i++) {
-        var type;
-        if(i>7 && i<24) {                                       // pawn
-            type = "PAWN";
-        } else if (i == 0 || i == 7 || i == 24 || i == 31) {    // rook
-            type = "ROOK";
-        } else if (i == 1 || i == 6 || i == 25 || i == 30) {    // knight
-            type = "KNIGHT";
-        } else if (i == 2 || i == 5 || i == 26 || i == 29) {    // bishop
-            type = "BISHOP";
-        } else if (i == 3 || i == 27) {                         // queen
-            type = "QUEEN";
-        } else if (i == 4 || i == 28) {                         // king
-            type = "KING";
+    {
+        for (let i=0; i<this.pieceCount/2; i++) {
+            this.piece[i] = new Piece();
+            this.piece[i].color = PieceColor.LIGHT;
+            this.piece[i].location = this.square[i];
         }
-        
-        var p = this.piece[i];
-        p.type = PieceType[type];
-        p.char = PieceChar[type];
-        p.moves = PieceMoves[type];
-        
-        if(p.type == PieceType.PAWN) {
-            p.forward = p.location.rel.up;
+        for (let i=this.pieceCount/2; i<this.pieceCount; i++) {
+            this.piece[i] = new Piece();
+            this.piece[i].color = PieceColor.DARK;
+            this.piece[i].location = this.square[i+32];
+        }
+        for (let i=0; i<this.pieceCount; i++) {
+            let type;
+            if(i>7 && i<24) {                                       // pawn
+                type = "PAWN";
+            } else if (i == 0 || i == 7 || i == 24 || i == 31) {    // rook
+                type = "ROOK";
+            } else if (i == 1 || i == 6 || i == 25 || i == 30) {    // knight
+                type = "KNIGHT";
+            } else if (i == 2 || i == 5 || i == 26 || i == 29) {    // bishop
+                type = "BISHOP";
+            } else if (i == 3 || i == 27) {                         // queen
+                type = "QUEEN";
+            } else if (i == 4 || i == 28) {                         // king
+                type = "KING";
+            }
+            
+            let p = this.piece[i];
+            p.type = PieceType[type];
+            p.char = PieceChar[type];
+            p.moves = PieceMoves[type];
+            
+            if(p.type == PieceType.PAWN) {
+                p.forward = p.location.rel.up;
+            }
         }
     }
 };
@@ -302,9 +303,9 @@ var Engine = function(canvas, pixelRatio) {
     this.held = null;
 
     this.calibrate = function() {
-        var w = parseFloat(window.getComputedStyle(this.canvas).width) *
+        let w = parseFloat(window.getComputedStyle(this.canvas).width) *
             this.pRatio;
-        var h = parseFloat(window.getComputedStyle(this.canvas).height) *
+        let h = parseFloat(window.getComputedStyle(this.canvas).height) *
             this.pRatio;
         
         this.ctx.canvas.width = w;
@@ -324,9 +325,9 @@ var Engine = function(canvas, pixelRatio) {
     // cache mouse coordinates as square widths
     this.setMouse = function(event, touch) {
         if(event) {
-            var scale = this.getScale();
-            var xoffset = this.canvas.getBoundingClientRect().left;
-            var yoffset = this.canvas.getBoundingClientRect().top;
+            let scale = this.getScale();
+            let xoffset = this.canvas.getBoundingClientRect().left;
+            let yoffset = this.canvas.getBoundingClientRect().top;
             if(touch) {
                 this.mousePos = {
                     x: ((event.touches[0].pageX-xoffset)/
@@ -347,12 +348,12 @@ var Engine = function(canvas, pixelRatio) {
     
     // pick up piece under mouse
     this.pick = function() {
-        var nn = this.board.nodeNearest(
+        let nn = this.board.nodeNearest(
                 this.mousePos,
                 this.board.piece,
                 'location'
             );
-        var piece = this.board.pieceOn(nn);
+        let piece = this.board.pieceOn(nn);
         if(piece != null) {
             this.held = piece;
             this.canvas.style.cursor = "none";
@@ -362,7 +363,7 @@ var Engine = function(canvas, pixelRatio) {
     // drop piece
     this.drop = function() {
         if(this.held != null) {
-            var nn = this.board.nodeNearest(this.mousePos, this.board.square);
+            let nn = this.board.nodeNearest(this.mousePos, this.board.square);
             if(this.board.canMove(this.held, nn)) {
                 this.board.move(this.held, nn);
             }
@@ -377,8 +378,8 @@ var Engine = function(canvas, pixelRatio) {
         this.pctx.clearRect(0,0,this.pcanvas.width,this.pcanvas.height);
 
         // set data
-        var scale = this.getScale();
-        var nearest = this.board.nodeNearest(this.mousePos, this.board.square);
+        let scale = this.getScale();
+        let nearest = this.board.nodeNearest(this.mousePos, this.board.square);
         this.pctx.textAlign = "center";
         this.pctx.lineJoin = "round";
         
@@ -404,8 +405,8 @@ var Engine = function(canvas, pixelRatio) {
         this.pctx.font = Math.floor(3*scale/5) + "px Times New Roman";
         this.pctx.lineWidth = scale/16;
         
-        var p, xrend, yrend;
-        for(var i=0; i<this.board.pieceCount; i++) {
+        let p, xrend, yrend;
+        for(let i=0; i<this.board.pieceCount; i++) {
             p = this.board.piece[i];
             
             // set colors
@@ -435,9 +436,8 @@ var Engine = function(canvas, pixelRatio) {
         this.pctx.lineWidth = 4;
         this.pctx.strokeStyle = "#000";
         this.pctx.fillStyle = "#FF0";
-        var currSquare = nearest;
-        var label;
-        for(var direction in currSquare.rel) { // foreach up down left right
+        let currSquare = nearest, label;
+        for(let direction in currSquare.rel) { // foreach up down left right
             if (currSquare.rel[direction]) { // if not null
                 xrend = currSquare.rel[direction].coord.x*scale;
                 yrend = currSquare.rel[direction].coord.y*scale + 7;
