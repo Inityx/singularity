@@ -176,6 +176,7 @@ var Board = function() {
         } else if (i<36) {  // middle
             s.type = SquareType.MID;
             s.column = (i-20)%8;
+            s.depth = Math.abs(s.column-4)+(s.column>3);
         } else {
             s.type = SquareType.TOP;
             if (i>this.size-17) {         // top two rows
@@ -199,25 +200,26 @@ var Board = function() {
     
     // connect nodes
     {
-        let offset, s = this.square;
+        let offset, d, s = this.square;
         for (let i=0; i<this.size; i++) {
+            d = s[i].depth;
             if(s[i].type != SquareType.MID) { // Top/bottom squares
                 // up
-                offset = (s[i].depth<6)   +
-                         (s[i].depth<5)*2 +
-                         (s[i].depth<4)*2;
+                offset = (d<6)   +
+                         (d<5)*2 +
+                         (d<4)*2;
                 offset = (s[i].type == SquareType.TOP)?i-8+offset:i+8-offset;
-                if(s[offset].depth == s[i].depth-1) {
+                if(s[offset].depth == d-1) {
                     s[i].rel.up = s[offset];
                 } else {
                     s[i].rel.up = s[28+s[i].column];
                 }
     
                 // down
-                if(s[i].depth < 6) {
-                    offset = (s[i].depth<5)   +
-                             (s[i].depth<4)*2 +
-                             (s[i].depth<3)*2;
+                if(d < 6) {
+                    offset = (d<5)   +
+                             (d<4)*2 +
+                             (d<3)*2;
                     offset = (s[i].type == SquareType.TOP)?i+8-offset:i-8+offset;
                     s[i].rel.down = s[offset];
                 }
@@ -225,7 +227,7 @@ var Board = function() {
                 // left
                 offset = (s[i].type == SquareType.TOP)?1:-1;
                 if(i>0 && i<63) {
-                    if(s[i+offset].depth == s[i].depth) {
+                    if(s[i+offset].depth == d) {
                         s[i].rel.left = s[i+offset];
                     } else if((s[i].type == SquareType.TOP && s[i].column < 7) ||
                               (s[i].type == SquareType.BOT && s[i].column > 0)) {
@@ -235,14 +237,40 @@ var Board = function() {
     
                 // right
                 offset = (s[i].type == SquareType.TOP)?-1:1;
-                if(s[i+offset].depth == s[i].depth) {
+                if(s[i+offset].depth == d) {
                     s[i].rel.right = s[i+offset];
                 } else if((s[i].type == SquareType.TOP && s[i].column > 0) ||
                           (s[i].type == SquareType.BOT && s[i].column < 7)) {
                     s[i].rel.right = s[28+s[i].column+offset];
                 }
             } else { // middle squares
+                // up
+                offset = (d > 1)*6 +
+                         (d > 2)*4 +
+                         (d > 3)*6;
+                offset = (i<32)?32-offset:31+offset;
+                s[i].rel.up = s[offset];
                 
+                // down
+                offset = (d > 1)*2 +
+                         (d > 2)*4 +
+                         (d > 3)*6;
+                offset = (i<32)?36+offset:27-offset;
+                s[i].rel.down = s[offset];
+                
+                // left
+                offset = (d > 1)*4 +
+                         (d > 2)*2 +
+                         (d > 3)*4;
+                offset = (i<32)?32+offset:31-offset;
+                s[i].rel.left = s[offset];
+
+                // right
+                offset = (d > 1)*4 +
+                         (d > 2)*6 +
+                         (d > 3)*8;
+                offset = (i<32)?26-offset:37+offset;
+                s[i].rel.right = s[offset];
             }
         }
     }
