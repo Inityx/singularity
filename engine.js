@@ -81,7 +81,7 @@ var Piece = function() {
     
     // return 2D array of possible destination squares
     this.getPaths = function(board) {
-        let ret = [], steps, curr;
+        let ret = [];
         ret.push([this.location]); // no move
         
         if(this.moves.dir == "f" && this.moves.lim == 2) {
@@ -123,7 +123,7 @@ var Board = function() {
         };
 
         let min_in = function(from, arr, pmin) {
-            let min = (pmin)?pmin:initial(arr);
+            let min = (pmin)?pmin:initial(arr), curr;
             for(let item of arr) {
                 curr = Array.isArray(item)?min_in(from, item, pmin):item;
                 if(dist(from, curr.coord) < dist(from, min.coord)) {
@@ -417,6 +417,7 @@ var Engine = function(canvas, pixelRatio) {
         let nearest = this.board.nodeNearest(this.mousePos, this.board.square);
         this.pctx.textAlign = "center";
         this.pctx.lineJoin = "round";
+        this.pctx.lineCap = "round";
         
         if(this.held) {
             let nearTarget = this.board.nodeNearest(this.mousePos, this.paths);
@@ -437,6 +438,8 @@ var Engine = function(canvas, pixelRatio) {
 
             // targets and paths
             this.pctx.fillStyle = "orange";
+            this.pctx.strokeStyle = "orange";
+            this.pctx.lineWidth = scale/16;
             for(let path of this.paths) {
                 for(let i=0; i<path.length; i++) {
                     if(path[i] != this.held.location) {
@@ -451,6 +454,21 @@ var Engine = function(canvas, pixelRatio) {
                         this.pctx.closePath();
                         this.pctx.fill();
                     }
+                }
+                if(path.length > 1 ||
+                        (path.length == 1 && path[0] != this.held.location)) {
+                    this.pctx.beginPath();
+                    this.pctx.moveTo(
+                            this.held.location.coord.x*scale,
+                            this.held.location.coord.y*scale
+                        );
+                    for(let i=0; i<path.length; i++) {
+                        this.pctx.lineTo(
+                                path[i].coord.x*scale,
+                                path[i].coord.y*scale
+                            );
+                    }
+                    this.pctx.stroke();
                 }
             }
         }
