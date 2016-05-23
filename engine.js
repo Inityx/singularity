@@ -329,6 +329,8 @@ var Engine = function(canvas, pixelRatio) {
     this.mousePos = { x:-1, y: -1 };
     this.held = null;
     this.paths = null;
+    
+    this.debug = false;
 
     this.calibrate = function() {
         let w = parseFloat(window.getComputedStyle(this.canvas).width) *
@@ -514,19 +516,22 @@ var Engine = function(canvas, pixelRatio) {
         }
         
         // connection info
-        this.pctx.font = scale/8 + "px Helvetica";
-        this.pctx.lineWidth = scale/16;
-        this.pctx.strokeStyle = "rgba(0,0,0,0.8)";
-        this.pctx.fillStyle = "rgba(0,200,100,0.8";
-        let currSquare = nearest, label;
-        for(let direction in currSquare.rel) { // foreach up down left right
-            if (currSquare.rel[direction]) { // if not null
-                xrend = currSquare.rel[direction].coord.x*scale;
-                yrend = currSquare.rel[direction].coord.y*scale + (2*scale/5);
-                this.pctx.strokeText(direction, xrend, yrend);
-                this.pctx.fillText  (direction, xrend, yrend);
+        if(this.debug) {
+            this.pctx.font = scale/8 + "px Helvetica";
+            this.pctx.lineWidth = scale/16;
+            this.pctx.strokeStyle = "rgba(0,0,0,0.8)";
+            this.pctx.fillStyle = "rgba(0,200,100,0.8";
+            let currSquare = nearest;
+            for(let direction in currSquare.rel) { // foreach up down left right
+                if (currSquare.rel[direction]) { // if not null
+                    xrend = currSquare.rel[direction].coord.x*scale;
+                    yrend = currSquare.rel[direction].coord.y*scale + (2*scale/5);
+                    this.pctx.strokeText(direction, xrend, yrend);
+                    this.pctx.fillText  (direction, xrend, yrend);
+                }
             }
         }
+        
         // copy render to display canvas
         this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
         this.ctx.drawImage(this.pcanvas,0,0);
