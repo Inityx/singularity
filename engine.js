@@ -144,7 +144,8 @@ var Board = function() {
         }
         return null;
     };
-
+    
+    // TODO Remove
     this.canMove = function(piece, location) {
         return !(this.pieceOn(location));
     };
@@ -152,6 +153,25 @@ var Board = function() {
     this.move = function(piece, location) {
         piece.location = location;
     };
+    
+    // return destination square corrected for SquareType boundaries
+    this.literalDest = function(prev, curr, direction) {
+        if(curr.type == SquareType.MID) { // to mids
+            if(curr.column < 4 && prev.type == SquareType.BOT) {
+                    // translate for bottom => left mid
+            } else if(curr.column > 3 && prev.type == SquareType.TOP) {
+                    // translate for top => right mid
+            }
+        } else if(prev.type == SquareType.MID) { // from mids
+            if       (prev.column < 4 && curr.type == SquareType.BOT) {
+                // translate for left mid => bottom
+            } else if(prev.column > 3 && curr.type == SquareType.Top) {
+                // translate for right mid => top 
+            }
+        }
+        // no change
+        return curr.rel[direction];
+    }
     
     // define logical coords for nodes
     for (let i=0; i<this.size; i++) {
@@ -531,7 +551,6 @@ var Engine = function(canvas, pixelRatio) {
                 }
             }
         }
-        
         // copy render to display canvas
         this.ctx.clearRect(0,0,this.canvas.width,this.canvas.height);
         this.ctx.drawImage(this.pcanvas,0,0);
