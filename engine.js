@@ -1,3 +1,6 @@
+// Torvalds forgive me
+Array.prototype.top = function() { return this[this.length-1]; };
+
 var SquareType = {
     BOT: 0,
     MID: 1,
@@ -71,6 +74,25 @@ var PieceChar = {
 };
 Object.freeze(PieceChar);
 
+var IDirs = {
+    d: [ 'up', 'left', 'down', 'right' ],
+    before: function(key) {
+        if(this.d.indexOf(key) != -1) {
+            return this.d[(this.d.indexOf(key)+3)%4];
+        } else {
+            throw new Error("Bad idirs key: " + key);
+        }
+    },
+    after: function(key) {
+        if(this.d.indexOf(key) != -1) {
+            return this.d[(this.d.indexOf(key)+1)%4];
+        } else {
+            throw new Error("Bad idirs key: " + key);
+        }
+    }
+};
+Object.freeze(IDirs);
+
 var Piece = function() {
     this.color = -1;
     this.type = -1;
@@ -81,35 +103,55 @@ var Piece = function() {
     
     // return 2D array of possible destination squares
     this.getPaths = function(board) {
-        let ret = [];
-        ret.push([this.location]); // no move
+        let ret = [], temp1, temp2;
         
-        if(this.moves.dir == "f" && this.moves.lim == 2) {
-            // pawn move
+        ret.push([this.location]); // no move
+          
+        if(this.moves.dir == "f" && this.moves.lim == 2) { // pawn
             // forward
-            if(!board.pieceOn(this.location.rel[this.forward])) {
-                ret.push([
-                        this.location.rel[this.forward],
-                        this.location.rel[this.forward].rel[
-                            board.translateRel(
-                                this.location,
-                                this.location.rel[this.forward],
-                                this.forward
-                            )]
-                    ]);
+            temp1 = this.location.rel[this.forward];
+            if(!board.pieceOn(temp1)) {
+                ret.push([temp1]);
+                temp2 = temp1.rel[
+                        board.translateRel(
+                            this.location,
+                            temp1,
+                            this.forward
+                        )];
+                if(!board.pieceOn(temp2)) {
+                    ret.top().push(temp2);
+                }
             }
-            // diag attack
-        } else if (this.moves.dir == "k" && this.moves.lim == 1) {
-            // knight moves
+            // diag attack 1
+            temp1 = this.location.rel[this.forward];
+            temp2 = temp1.rel[board.translateRel(
+                    this.location,
+                    temp1,
+                    IDirs.after(this.forward)
+                )];
+            temp1 = board.pieceOn(temp2);
+            if(temp1 && temp1.color != this.color) { ret.push([temp2]); }
+            // diag attack 2
+            temp1 = this.location.rel[this.forward];
+            temp2 = temp1.rel[board.translateRel(
+                    this.location,
+                    temp1,
+                    IDirs.before(this.forward)
+                )];
+            temp1 = board.pieceOn(temp2);
+            if(temp1 && temp1.color != this.color) { ret.push([temp2]); }
+            
+        } else if (this.moves.dir == "k" && this.moves.lim == 1) { // knight
+            
         } else {
-            if(this.moves.dir.match(/o/)) {
-                // orthogonal moves
+            if(this.moves.dir.match(/o/)) { // orthogonal moves
+                
             }
-            if(this.moves.dir.match(/d/)) {
-                // diagonal moves
+            if(this.moves.dir.match(/d/)) { // diagonal moves
+                
             }
         }
-        
+        console.log("Returning " + ret.length + " paths.");
         return ret;
     };
 };
@@ -165,31 +207,30 @@ var Board = function() {
     // return destination square corrected for SquareType boundaries
     this.translateRel = function(prev, curr, direction) {
         // indexed directions counterclockwise
-        let idirs = [ 'up', 'left', 'down', 'right' ];
         
         if(prev.column < 4 && curr.column < 4) { // left side
             if(prev.type == SquareType.BOT && curr.type != prev.type) {
                 console.log("A");
-                return idirs[(idirs.indexOf(direction)+1)%idirs.length];
+                return IDirs.after(direction);
             } else if(curr.type == SquareType.BOT && curr.type != prev.type) {
                 console.log("B");
-                return idirs[(idirs.indexOf(direction)+3)%idirs.length];
+                return IDirs.before(direction);
             }
         } else if(prev.column > 3 && curr.column > 3) { // right side
             if(prev.type == SquareType.TOP && curr.type != prev.type) {
                 console.log("C");
-                return idirs[(idirs.indexOf(direction)+1)%idirs.length];
+                return IDirs.after(direction);
             } else if(curr.type == SquareType.TOP && curr.type != prev.type) {
                 console.log("D");
-                return idirs[(idirs.indexOf(direction)+3)%idirs.length];
+                return IDirs.before(direction);
             }
         } else { // crossing left/right
             if(prev.type == curr.type) { // if within the same layer
                 if(prev.type == SquareType.MID) { // if layer is mid
                     if(prev.column < 4) { // switch rotation based on side
-                        return idirs[(idirs.indexOf(direction)+1)%idirs.length];
+                        return IDirs.after(direction);
                     } else {
-                        return idirs[(idirs.indexOf(direction)+3)%idirs.length];
+                        return IDirs.before(direction);
                     }
                 }
             } else { // if not within same layer
@@ -500,7 +541,8 @@ var Engine = function(canvas) {
             this.pctx.lineWidth = scale/16;
             for(let path of this.paths) {
                 for(let i=0; i<path.length; i++) {
-                    if(path[i] != this.held.location) {
+                    if(path[i] != this.held.location &&
+                            !this.board.pieceOn(path[i])) {
                         this.pctx.beginPath();
                         this.pctx.arc(
                                 path[i].coord.x*scale,
