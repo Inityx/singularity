@@ -88,7 +88,6 @@ var Piece = function() {
             // pawn move
             // forward
             if(!board.pieceOn(this.location.rel[this.forward])) {
-                console.log("Direction: " + this.forward);
                 ret.push([
                         this.location.rel[this.forward],
                         this.location.rel[this.forward].rel[
@@ -167,26 +166,40 @@ var Board = function() {
     this.translateRel = function(prev, curr, direction) {
         // indexed directions counterclockwise
         let idirs = [ 'up', 'left', 'down', 'right' ];
-        if ((curr.column < 4 && prev.type == SquareType.BOT && curr.type != prev.type) ||
-            (curr.column > 3 && prev.type == SquareType.TOP && curr.type != prev.type)) {
-            console.log("=> M");
-            return idirs[(idirs.indexOf(direction)+1)%idirs.length];
+        
+        if(prev.column < 4 && curr.column < 4) { // left side
+            if(prev.type == SquareType.BOT && curr.type != prev.type) {
+                console.log("A");
+                return idirs[(idirs.indexOf(direction)+1)%idirs.length];
+            } else if(curr.type == SquareType.BOT && curr.type != prev.type) {
+                console.log("B");
+                return idirs[(idirs.indexOf(direction)+3)%idirs.length];
+            }
+        } else if(prev.column > 3 && curr.column > 3) { // right side
+            if(prev.type == SquareType.TOP && curr.type != prev.type) {
+                console.log("C");
+                return idirs[(idirs.indexOf(direction)+1)%idirs.length];
+            } else if(curr.type == SquareType.TOP && curr.type != prev.type) {
+                console.log("D");
+                return idirs[(idirs.indexOf(direction)+3)%idirs.length];
+            }
+        } else { // crossing left/right
+            if(prev.type == curr.type) { // if within the same layer
+                if(prev.type == SquareType.MID) { // if layer is mid
+                    if(prev.column < 4) { // switch rotation based on side
+                        return idirs[(idirs.indexOf(direction)+1)%idirs.length];
+                    } else {
+                        return idirs[(idirs.indexOf(direction)+3)%idirs.length];
+                    }
+                }
+            } else { // if not within same layer
+                alert("THIS ACTION CURRENTLY ENCOUNTERS A BUG.\n\
+I AM VERY SORRY.\n\
+DO NOT PANIC.");
+            }
         }
-        if ((prev.type == SquareType.MID && curr.type == SquareType.BOT && prev.column < 4) ||
-            (prev.type == SquareType.MID && curr.type == SquareType.TOP && prev.column > 3)) {
-            console.log("M =>");
-            return idirs[(idirs.indexOf(direction)+3)%idirs.length];
-        }
-        if (prev.column < 4 && curr == this.square[32]) {
-            console.log("L => RM");
-            return idirs[(idirs.indexOf(direction)+1)%4];
-        }
-        if (prev.column > 3 && curr == this.square[31]) {
-            console.log("R => LM");
-            return idirs[(idirs.indexOf(direction)+3)%4];
-        }
-        // no change
-        return direction;
+        
+        return direction; // no change
     }
     
     // define logical coords for nodes
