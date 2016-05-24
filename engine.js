@@ -363,11 +363,11 @@ DO NOT PANIC.");
     }
 };
 
-var Engine = function(canvas, pixelRatio) {
+var Engine = function(canvas) {
     // display canvas
     this.canvas = canvas;
     this.ctx = this.canvas.getContext("2d");
-    this.pRatio = pixelRatio;
+    this.pRatio = 1;
     
     // hidden canvas as drawbuffer to decrease latency
     this.pcanvas = document.createElement("canvas");
@@ -382,6 +382,8 @@ var Engine = function(canvas, pixelRatio) {
     this.debug = false;
 
     this.calibrate = function() {
+        this.pRatio = window.devicePixelRatio;
+        
         let w = parseFloat(window.getComputedStyle(this.canvas).width) *
             this.pRatio;
         let h = parseFloat(window.getComputedStyle(this.canvas).height) *

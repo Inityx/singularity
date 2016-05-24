@@ -5,7 +5,7 @@ var bColors;
 
 window.onload = function() {
     let canvas = document.getElementById("scene");
-    engine = new Engine(canvas, window.devicePixelRatio);
+    engine = new Engine(canvas);
     
     bColors = {
         input: [ document.getElementById("cp1"), document.getElementById("cp2") ],
