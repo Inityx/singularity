@@ -87,8 +87,17 @@ var Piece = function() {
         if(this.moves.dir == "f" && this.moves.lim == 2) {
             // pawn move
             // forward
-            if(!board.pieceOn(this.forward)) {
-                ret.push([this.forward, this.forward.rel.up]);
+            if(!board.pieceOn(this.location.rel[this.forward])) {
+                console.log("Direction: " + this.forward);
+                ret.push([
+                        this.location.rel[this.forward],
+                        this.location.rel[this.forward].rel[
+                            board.translateRel(
+                                this.location,
+                                this.location.rel[this.forward],
+                                this.forward
+                            )]
+                    ]);
             }
             // diag attack
         } else if (this.moves.dir == "k" && this.moves.lim == 1) {
@@ -155,22 +164,29 @@ var Board = function() {
     };
     
     // return destination square corrected for SquareType boundaries
-    this.literalDest = function(prev, curr, direction) {
-        if(curr.type == SquareType.MID) { // to mids
-            if(curr.column < 4 && prev.type == SquareType.BOT) {
-                    // translate for bottom => left mid
-            } else if(curr.column > 3 && prev.type == SquareType.TOP) {
-                    // translate for top => right mid
-            }
-        } else if(prev.type == SquareType.MID) { // from mids
-            if       (prev.column < 4 && curr.type == SquareType.BOT) {
-                // translate for left mid => bottom
-            } else if(prev.column > 3 && curr.type == SquareType.Top) {
-                // translate for right mid => top 
-            }
+    this.translateRel = function(prev, curr, direction) {
+        // indexed directions counterclockwise
+        let idirs = [ 'up', 'left', 'down', 'right' ];
+        if ((curr.column < 4 && prev.type == SquareType.BOT && curr.type != prev.type) ||
+            (curr.column > 3 && prev.type == SquareType.TOP && curr.type != prev.type)) {
+            console.log("=> M");
+            return idirs[(idirs.indexOf(direction)+1)%idirs.length];
+        }
+        if ((prev.type == SquareType.MID && curr.type == SquareType.BOT && prev.column < 4) ||
+            (prev.type == SquareType.MID && curr.type == SquareType.TOP && prev.column > 3)) {
+            console.log("M =>");
+            return idirs[(idirs.indexOf(direction)+3)%idirs.length];
+        }
+        if (prev.column < 4 && curr == this.square[32]) {
+            console.log("L => RM");
+            return idirs[(idirs.indexOf(direction)+1)%4];
+        }
+        if (prev.column > 3 && curr == this.square[31]) {
+            console.log("R => LM");
+            return idirs[(idirs.indexOf(direction)+3)%4];
         }
         // no change
-        return curr.rel[direction];
+        return direction;
     }
     
     // define logical coords for nodes
@@ -328,7 +344,7 @@ var Board = function() {
             p.moves = PieceMoves[type];
             
             if(p.type == PieceType.PAWN) {
-                p.forward = p.location.rel.up;
+                p.forward = 'up';
             }
         }
     }
@@ -398,7 +414,6 @@ var Engine = function(canvas, pixelRatio) {
     
     // pick up piece under mouse
     this.pick = function() {
-        console.log("DEBUG Pick");
         let nn = this.board.nodeNearest(
                 this.mousePos,
                 this.board.square
@@ -413,13 +428,19 @@ var Engine = function(canvas, pixelRatio) {
 
     // drop piece
     this.drop = function() {
-        console.log("DEBUG Drop");
         if(this.held && this.paths && this.paths[0]) {
             let nn = this.board.nodeNearest(
                     this.mousePos,
                     this.paths
                 );
             if(nn != this.held.location && this.board.canMove(this.held, nn)) {
+                if(this.held.forward) {
+                    this.held.forward = this.board.translateRel(
+                            this.held.location,
+                            nn,
+                            this.held.forward
+                        );
+                }
                 this.board.move(this.held, nn);
                 // change to other player's move
             }
