@@ -148,10 +148,20 @@ var Piece = function() {
             
         } else {
             if(this.moves.dir.match(/o/)) { // orthogonal moves
-                
+                // temp1 is next target
+                //do {
+                    // push temp1
+                    // temp2 gets temp1, maybe optimize out temp2?
+                    // temp1 is new target from temp2
+                //} while(canMove(this, temp1));
             }
             if(this.moves.dir.match(/d/)) { // diagonal moves
-                
+                // temp1 is next target
+                //do {
+                    // push temp1
+                    // temp2 gets temp1, maybe optimize out temp2?
+                    // temp1 is new target from temp2
+                //} while(canMove(this, temp1));
             }
         }
         console.log("Returning " + ret.length + " paths.");
