@@ -28,7 +28,7 @@ var Square = function() {
             this.coord.y = 6;
         } else {
             let x = this.column - 3.5;
-            let d = this.depth -.5;
+            let d = this.depth -0.5;
             let y = Math.sqrt((d*d) - (x*x));
 
             this.coord.y = ((this.type == SquareType.BOT)?y:-y)+6;
@@ -100,26 +100,29 @@ var Piece = function() {
     this.location = null;
     this.moves = null;
     this.forward = null; // directionality for pawn
+    this.first = true; // tracking first move for pawn
     
     // return 2D array of possible destination squares
     this.getPaths = function(board) {
         let ret = [], temp1, temp2;
         
         ret.push([this.location]); // no move
-          
+        
         if(this.moves.dir == "f" && this.moves.lim == 2) { // pawn
             // forward
             temp1 = this.location.rel[this.forward];
             if(!board.pieceOn(temp1)) {
                 ret.push([temp1]);
-                temp2 = temp1.rel[
-                        board.translateRel(
-                            this.location,
-                            temp1,
-                            this.forward
-                        )];
-                if(!board.pieceOn(temp2)) {
-                    ret.top().push(temp2);
+                if(this.first) {
+                    temp2 = temp1.rel[
+                            board.translateRel(
+                                this.location,
+                                temp1,
+                                this.forward
+                            )];
+                    if(!board.pieceOn(temp2)) {
+                        ret.top().push(temp2);
+                    }
                 }
             }
             // diag attack 1
@@ -155,7 +158,7 @@ var Piece = function() {
         return ret;
     };
 };
-    
+
 var Board = function() {
     this.size = 64;
     this.pieceCount = 32;
@@ -200,10 +203,6 @@ var Board = function() {
         return !(this.pieceOn(location));
     };
 
-    this.move = function(piece, location) {
-        piece.location = location;
-    };
-    
     // return destination square corrected for SquareType boundaries
     this.translateRel = function(prev, curr, direction) {
         // indexed directions counterclockwise
@@ -234,14 +233,12 @@ var Board = function() {
                     }
                 }
             } else { // if not within same layer
-                alert("THIS ACTION CURRENTLY ENCOUNTERS A BUG.\n\
-I AM VERY SORRY.\n\
-DO NOT PANIC.");
+                alert("THIS ACTION CURRENTLY ENCOUNTERS A BUG.\nI AM VERY SORRY.\nDO NOT PANIC.");
             }
         }
         
         return direction; // no change
-    }
+    };
     
     // define logical coords for nodes
     for (let i=0; i<this.size; i++) {
@@ -279,7 +276,7 @@ DO NOT PANIC.");
                 s.depth = 3;
             } else if (i>this.size-29) {  // center adjacent
                 s.column = 7-((this.size-i-8)%8);
-                s.depth = 2; 
+                s.depth = 2;
             }
         }
         
@@ -303,7 +300,7 @@ DO NOT PANIC.");
                 } else {
                     s[i].rel.up = s[28+s[i].column];
                 }
-    
+                
                 // down
                 if(d < 6) {
                     offset = (d<5)   +
@@ -312,7 +309,7 @@ DO NOT PANIC.");
                     offset = (s[i].type == SquareType.TOP)?i+8-offset:i-8+offset;
                     s[i].rel.down = s[offset];
                 }
-    
+                
                 // left
                 offset = (s[i].type == SquareType.TOP)?1:-1;
                 if(i>0 && i<63) {
@@ -323,7 +320,7 @@ DO NOT PANIC.");
                         s[i].rel.left = s[28+s[i].column+offset];
                     }
                 }
-    
+                
                 // right
                 offset = (s[i].type == SquareType.TOP)?-1:1;
                 if(s[i+offset].depth == d) {
@@ -353,7 +350,7 @@ DO NOT PANIC.");
                          (d > 3)*4;
                 offset = (i<32)?32+offset:31-offset;
                 s[i].rel.left = s[offset];
-
+                
                 // right
                 offset = (d > 1)*4 +
                          (d > 2)*6 +
@@ -380,7 +377,7 @@ DO NOT PANIC.");
             let type;
             if(i>7 && i<24) {                                       // pawn
                 type = "PAWN";
-            } else if (i == 0 || i == 7 || i == 24 || i == 31) {    // rook
+            } else if (i === 0 || i == 7 || i == 24 || i == 31) {    // rook
                 type = "ROOK";
             } else if (i == 1 || i == 6 || i == 25 || i == 30) {    // knight
                 type = "KNIGHT";
@@ -475,7 +472,7 @@ var Engine = function(canvas) {
                 this.board.square
             );
         let piece = this.board.pieceOn(nn);
-        if(piece != null) {
+        if(piece) {
             this.held = piece;
             this.paths = piece.getPaths(this.board);
             this.canvas.style.cursor = "none";
@@ -497,7 +494,8 @@ var Engine = function(canvas) {
                             this.held.forward
                         );
                 }
-                this.board.move(this.held, nn);
+                this.held.location = nn;
+                this.held.first = false;
                 // change to other player's move
             }
         }
@@ -510,7 +508,7 @@ var Engine = function(canvas) {
     this.render = function() {
         // clear drawbuffer canvas
         this.pctx.clearRect(0,0,this.pcanvas.width,this.pcanvas.height);
-
+        
         // set data
         let scale = this.getScale();
         let nearest = this.board.nodeNearest(this.mousePos, this.board.square);
@@ -534,7 +532,7 @@ var Engine = function(canvas) {
                 );
             this.pctx.closePath();
             this.pctx.stroke();
-
+            
             // targets and paths
             this.pctx.fillStyle = "orange";
             this.pctx.strokeStyle = "orange";
@@ -593,15 +591,14 @@ var Engine = function(canvas) {
                 this.pctx.fillStyle   = (p.color == PieceColor.LIGHT)?
                     "rgba(221,221,221,0.3)":"rgba(34,34,34,0.3)";
             }
-
+            
             xrend = p.location.coord.x*scale;
             yrend = p.location.coord.y*scale + (scale/5);
             this.pctx.strokeText(p.char, xrend, yrend);
             this.pctx.fillText  (p.char, xrend, yrend);
-                
         }
-
-        if(this.held != null) { // if piece held
+        
+        if(this.held) { // if piece held
             // held piece
             this.pctx.strokeStyle = (this.held.color == PieceColor.LIGHT)?
                 "#222":"#DDD";
